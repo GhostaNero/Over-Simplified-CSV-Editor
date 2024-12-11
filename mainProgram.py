@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox 
 import sv_ttk
 import os
 import sys
@@ -32,7 +33,7 @@ loggedIn = False
 class app(tk.Tk):
     
     def __init__(self, *args, **kwargs):
-        
+    
         tk.Tk.__init__(self, *args, **kwargs)  
         container = ttk.Frame(self, relief="sunken")  
         container.pack(fill="both", expand = True)  
@@ -87,24 +88,23 @@ class frontPageTemplate(ttk.Frame):
         self.inputtedUsername.trace_add('write', self.statusButton)
         self.inputtedPassword.trace_add('write', self.statusButton)
         
-        self.label1 = ttk.Label(self, text="Username:")
-        self.label2 = ttk.Label(self, text="Password:")
+        self.label1 = ttk.Label(self, text="Username:", font=("none, 26"))
+        self.label2 = ttk.Label(self, text="Password:", font=("none, 26"))
         
-        self.usernameEntry = ttk.Entry(self, textvariable=self.inputtedUsername)
-        self.passwordEntry = ttk.Entry(self, textvariable=self.inputtedPassword)
+        self.usernameEntry = ttk.Entry(self, textvariable=self.inputtedUsername, font=("none, 24"))
+        self.passwordEntry = ttk.Entry(self, textvariable=self.inputtedPassword, font=("none, 24"))
         
-        self.label1.pack(side="top", expand=True)
-        self.usernameEntry.pack(side="top", expand=True)
+        self.label1.pack(side="top", expand=True, pady=10)
+        self.usernameEntry.pack(side="top", expand=True, pady=10)
         
-        self.label2.pack(side="top", expand=True)
-        self.passwordEntry.pack(side="top", expand=True)
-                
+        self.label2.pack(side="top", expand=True, pady=10)
+        self.passwordEntry.pack(side="top", expand=True, pady=10)
+        self.explanationText()
         self.backwardButton = ttk.Button(self, text="Go Back", command=lambda: [self.clear_text(), controller.show_frame(menu)])
-        self.backwardButton.pack(side="top",expand=True, ipady=50)
+        self.backwardButton.place(relx=0.05, rely=0.05)
         
-        self.submitButton = ttk.Button(self, text="Submit", state='disabled')
-        self.submitButton.pack(side="left", pady=150,expand=True, ipadx= 60, ipady=50 )
-        
+        self.submitButton = ttk.Button(self, text="Submit", state='disabled', command=lambda: [self.clear_text(), self.submit()])
+        self.submitButton.pack(side="top", pady= 50,expand=True, ipadx= 60, ipady=50)
         self.style = ttk.Style(self)
         self.style.configure('TButton', width=15)
         
@@ -123,8 +123,15 @@ class frontPageTemplate(ttk.Frame):
       
     def createLabel(self):
               
-      self.label = ttk.Label(self, text="Sign Up / Create user", font=("Helvetica", 40))
-      self.label.pack(expand=True, pady=100)
+      pass
+    
+    def explanationText(self):
+      
+      pass
+    
+    def submit(self):
+      
+      pass
       
 class signUpMenu(frontPageTemplate):
     
@@ -135,13 +142,32 @@ class signUpMenu(frontPageTemplate):
       
       self.label = ttk.Label(self, text="Sign Up / Create user", font=("Helvetica", 40))
       self.label.pack(expand=True, pady=100)
+      
+    def explanationText(self):
+      
+      self.explanationLabel = ttk.Label(self, text="1. Username can only contain english\n    and numeric characters.\n2. Password must contain english characters, \n    numeric characters and special characters.", font=("none, 14"))
+      self.explanationLabel.pack(side="top", expand=True, pady=10)
+      
+    def submit(self):
+      
+      username = self.usernameEntry.get()
+      password = self.passwordEntry.get()
+
+      if username.isalnum() == True:
+        pass
+      else:
+        messagebox.showerror("Error", "Username can only contain english and numeric characters.")
+        
+      sql = f"SELECT FROM userCredentials WHERE username = '{username}'" 
+        
+        
 
 
 class logIn(frontPageTemplate):
     
     def __init__(self, parent, controller):
-      frontPageTemplate.__init__(self, parent, controller)
-      
+      super().__init__(parent, controller)
+    
     def createLabel(self):
       
       self.label = ttk.Label(self, text="Log In", font=("Helvetica", 40))
