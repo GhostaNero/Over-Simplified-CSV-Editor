@@ -10,9 +10,11 @@ import pandas as pd
 import sqlalchemy
 import phonenumbers
 import hashlib
+import re
+
 PASSWORD = ignore.password
 
-
+regex = re.compile('[@_!#$%^&*()<>?/\|}{~:]')
 mydb = mysql.connector.connect(
       host="localhost",
       user="root",
@@ -23,10 +25,11 @@ connection = sqlalchemy.create_engine(f'mysql+mysqlconnector://root:{PASSWORD}@l
 mycursor = mydb.cursor(buffered=True)
 #create the database if it doesnt exists
 mycursor.execute("CREATE DATABASE IF NOT EXISTS COURSEWORK;")
+mycursor.execute("USE COURSEWORK;")
+mycursor.execute("CREATE TABLE IF NOT EXISTS userCredentials(username varchar(255) NOT NULL, password varchar(255) NOT NULL, PRIMARY KEY(username));")
 mydb.commit()
 #execute to use the database 
-mycursor.execute("USE COURSEWORK;")
-mydb.commit()
+
 
 loggedIn = False
 
@@ -73,12 +76,16 @@ class menu(ttk.Frame):
         button2 = ttk.Button(self, text="Sign Up", command=lambda: controller.show_frame(signUpMenu),)
         button2.pack(side="left", pady=150,expand=True, ipadx= 100, ipady=100)
         
+        backwardButton = ttk.Button(self, text="Quit", command=lambda: sys.exit())
+        backwardButton.place(relx=0.05, rely=0.05)
         
-class frontPageTemplate(ttk.Frame):
+        
+class frontPageTemplate(menu):
     
     def __init__(self, parent, controller):
         
-        ttk.Frame.__init__(self,parent)
+        
+        ttk.Frame.__init__(self, parent)
         
         self.createLabel()
         
@@ -92,7 +99,7 @@ class frontPageTemplate(ttk.Frame):
         self.label2 = ttk.Label(self, text="Password:", font=("none, 26"))
         
         self.usernameEntry = ttk.Entry(self, textvariable=self.inputtedUsername, font=("none, 24"))
-        self.passwordEntry = ttk.Entry(self, textvariable=self.inputtedPassword, font=("none, 24"))
+        self.passwordEntry = ttk.Entry(self, textvariable=self.inputtedPassword, font=("none, 24"), show="*")
         
         self.label1.pack(side="top", expand=True, pady=10)
         self.usernameEntry.pack(side="top", expand=True, pady=10)
@@ -103,7 +110,7 @@ class frontPageTemplate(ttk.Frame):
         self.backwardButton = ttk.Button(self, text="Go Back", command=lambda: [self.clear_text(), controller.show_frame(menu)])
         self.backwardButton.place(relx=0.05, rely=0.05)
         
-        self.submitButton = ttk.Button(self, text="Submit", state='disabled', command=lambda: [self.clear_text(), self.submit()])
+        self.submitButton = ttk.Button(self, text="Submit", state='disabled', command=lambda: [self.submit(controller), self.clear_text()])
         self.submitButton.pack(side="top", pady= 50,expand=True, ipadx= 60, ipady=50)
         self.style = ttk.Style(self)
         self.style.configure('TButton', width=15)
@@ -129,14 +136,16 @@ class frontPageTemplate(ttk.Frame):
       
       pass
     
-    def submit(self):
+    def submit(self, controller):
       
       pass
-      
+    
+    
 class signUpMenu(frontPageTemplate):
     
     def __init__(self, parent, controller):
       super().__init__(parent, controller)
+      
       
     def createLabel(self):
       
@@ -153,25 +162,102 @@ class signUpMenu(frontPageTemplate):
       username = self.usernameEntry.get()
       password = self.passwordEntry.get()
 
-      if username.isalnum() == True:
-        pass
-      else:
+      if username.isalnum() == False:
         messagebox.showerror("Error", "Username can only contain english and numeric characters.")
+        return
         
-      sql = f"SELECT FROM userCredentials WHERE username = '{username}'" 
+      sql = f"SELECT username FROM usercredentials WHERE username = '{username}'" 
+      mycursor.execute(sql)
+      data = mycursor.fetchall()
+      
+      if data:
+        messagebox.showerror("Error", "Username has been taken, oops :D")
+        return
+      else:
+        pass
+      
+      isEnglish = False
+      isNumeric = False
+      isSpecial = False
+      
+      for i in range(len(password)):
+        if password[i].isalpha() == True:
+          isEnglish = True
+          continue
+        if password[i].isdigit() == True:
+          isNumeric = True
+          continue
+        if regex.search(password[i]) != None:
+          isSpecial = True
+          continue
+        else:
+          messagebox.showerror("Error", "What character did you input???")
+          return
         
-        
+      if isEnglish == False:
+        messagebox.showerror("Error", "Please have english characters in your password")
+        return
+      if isNumeric == False:
+        messagebox.showerror("Error", "Please include numbers in your password")
+        return
+      if isSpecial == False:
+        messagebox.showerror("Error", "Please include special characters in your password.")
+        return
+      
+      byteRepPassword = password.encode(encoding="utf-8")
+      sha256 = hashlib.sha256()
+      sha256.update(byteRepPassword)
+      hashedPassword = sha256.hexdigest()
+      
+      sql = f"INSERT INTO usercredentials VALUES('{username}','{hashedPassword}');"
+      
+      try:
+        mycursor.execute(sql)
+        mydb.commit()
+        messagebox.showinfo("Success!", ":D You created an user!!")
+        return
+      except:
+        messagebox.showerror("Error", "Something happened while trying to create user, try again later or use different username and password.")
+        return
 
 
 class logIn(frontPageTemplate):
+  
     
     def __init__(self, parent, controller):
       super().__init__(parent, controller)
+      self.controller = controller
     
     def createLabel(self):
       
       self.label = ttk.Label(self, text="Log In", font=("Helvetica", 40))
       self.label.pack(expand=True, pady=100)
+    
+    def submit(self, controller):
+      username = self.usernameEntry.get()
+      password = self.passwordEntry.get()
+
+      if username.isalnum() == False:
+        messagebox.showerror("Error", "Username can only contain english and numeric characters.")
+        return
       
+      byteRepPassword = password.encode(encoding="utf-8")
+      sha256 = hashlib.sha256()
+      sha256.update(byteRepPassword)
+      hashedPassword = sha256.hexdigest()
+      
+      sql = f"SELECT * FROM usercredentials WHERE username = '{username}' AND password = '{hashedPassword}'"
+      mycursor.execute(sql)
+      data = mycursor.fetchall()
+      
+      if data:
+        
+        messagebox.showinfo("Success!", "You are logged on!!")
+        loggedIn = True
+        self.controller.show_frame(menu)
+      else:
+        messagebox.showerror("Error!", "Username or password is incorrect")
+      
+      return
 App = app()
 App.mainloop()
