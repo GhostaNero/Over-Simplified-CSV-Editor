@@ -1,6 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox 
+from tkinter import messagebox, ttk, filedialog
 import sv_ttk
 import os
 import sys
@@ -43,7 +42,7 @@ class app(tk.Tk):
         self.frames = {}  
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
-        for F in (menu, logIn, signUpMenu):  
+        for F in (menu, logIn, signUpMenu, importCSVPage):  
   
             frame = F(container, self)  
   
@@ -80,7 +79,7 @@ class menu(ttk.Frame):
         backwardButton.place(relx=0.05, rely=0.05)
         
         
-class frontPageTemplate(menu):
+class frontPageTemplate(ttk.Frame):
     
     def __init__(self, parent, controller):
         
@@ -110,7 +109,7 @@ class frontPageTemplate(menu):
         self.backwardButton = ttk.Button(self, text="Go Back", command=lambda: [self.clear_text(), controller.show_frame(menu)])
         self.backwardButton.place(relx=0.05, rely=0.05)
         
-        self.submitButton = ttk.Button(self, text="Submit", state='disabled', command=lambda: [self.submit(controller), self.clear_text()])
+        self.submitButton = ttk.Button(self, text="Submit", state='disabled', command=lambda: [self.submit(), self.clear_text()])
         self.submitButton.pack(side="top", pady= 50,expand=True, ipadx= 60, ipady=50)
         self.style = ttk.Style(self)
         self.style.configure('TButton', width=15)
@@ -136,7 +135,7 @@ class frontPageTemplate(menu):
       
       pass
     
-    def submit(self, controller):
+    def submit(self):
       
       pass
     
@@ -181,15 +180,19 @@ class signUpMenu(frontPageTemplate):
       isSpecial = False
       
       for i in range(len(password)):
+        
         if password[i].isalpha() == True:
           isEnglish = True
           continue
+        
         if password[i].isdigit() == True:
           isNumeric = True
           continue
+        
         if regex.search(password[i]) != None:
           isSpecial = True
           continue
+        
         else:
           messagebox.showerror("Error", "What character did you input???")
           return
@@ -197,9 +200,11 @@ class signUpMenu(frontPageTemplate):
       if isEnglish == False:
         messagebox.showerror("Error", "Please have english characters in your password")
         return
+      
       if isNumeric == False:
         messagebox.showerror("Error", "Please include numbers in your password")
         return
+      
       if isSpecial == False:
         messagebox.showerror("Error", "Please include special characters in your password.")
         return
@@ -233,7 +238,7 @@ class logIn(frontPageTemplate):
       self.label = ttk.Label(self, text="Log In", font=("Helvetica", 40))
       self.label.pack(expand=True, pady=100)
     
-    def submit(self, controller):
+    def submit(self):
       username = self.usernameEntry.get()
       password = self.passwordEntry.get()
 
@@ -254,10 +259,43 @@ class logIn(frontPageTemplate):
         
         messagebox.showinfo("Success!", "You are logged on!!")
         loggedIn = True
-        self.controller.show_frame(menu)
+        self.controller.show_frame(importCSVPage)
       else:
         messagebox.showerror("Error!", "Username or password is incorrect")
       
       return
+    
+    
+    
+    
+class importCSVPage(ttk.Frame):
+  
+  def __init__(self, parent, controller):
+    
+    ttk.Frame.__init__(self, parent)
+    self.controller = controller
+    style = ttk.Style()
+    style.configure("TButton", width= 20,font=(None, 20))
+    
+    self.backButton = ttk.Button(self, text="Back to main menu", command=lambda: self.backFunction())
+    self.backButton.pack(side="left", pady=150,expand=True, ipadx= 100, ipady=100)
+    self.importingButton = ttk.Button(self, text="Import CSV", command=lambda: self.importCSV())
+    self.importingButton.pack(side="left", pady=150,expand=True, ipadx= 100, ipady=100)
+    
+    
+    
+  def backFunction(self):
+    
+    loggedIn = False
+    self.controller.show_frame(menu)
+    
+  def importCSV(self):
+    
+    file = filedialog.askopenfilename(title="CSV File", initialdir='/', filetypes=[("CSV Files", "*.csv")])
+    
+
+    
+    
+    
 App = app()
 App.mainloop()
