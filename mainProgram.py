@@ -42,7 +42,7 @@ class app(tk.Tk):
         self.frames = {}  
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
-        for F in (menu, logIn, signUpMenu, importCSVPage):  
+        for F in (menu, logIn, signUpMenu, importCSVPage, mainMenu):  
   
             frame = F(container, self)  
   
@@ -258,8 +258,11 @@ class logIn(frontPageTemplate):
       if data:
         
         messagebox.showinfo("Success!", "You are logged on!!")
+        global userID
+        userID = username.lower()
         loggedIn = True
         self.controller.show_frame(importCSVPage)
+        
       else:
         messagebox.showerror("Error!", "Username or password is incorrect")
       
@@ -291,13 +294,52 @@ class importCSVPage(ttk.Frame):
     
   def importCSV(self):
     
+    
+    requirementColumn = ['firstName', 'secondName', 'phoneNumber', 'gender', 'email']
+    
     file = filedialog.askopenfilename(title="CSV File", initialdir='/', filetypes=[("CSV Files", "*.csv")])
-    
+    columnName = pd.read_csv(file, nrows=1).columns.to_list()    
 
+    if len(columnName) == 5:
+      
+      for i in range(5):
+        
+        for j in range(5):
+          
+          if requirementColumn[i] == columnName[j]:
+            break
+          elif j < 4:
+            continue
+          else:
+            messagebox.showerror("Error", "The CSV file is in the wrong format.")
+    else:
+      messagebox.showerror("Error", "The CSV file is in the wrong format.")
+    
+    df = pd.read_csv(file, header=0, dtype={0:'string', 1:'string', 2:'string', 3:'string', 4:'string', 5:'string'})
+    deleteSQL = f"DROP TABLE IF EXISTS `{userID}`;"
+    mycursor.execute(deleteSQL)
+    mydb.commit()
+    createTableSQL = f"CREATE TABLE IF NOT EXISTS `{userID}` ({columnName[0]} varchar(255), {columnName[1]} varchar(255), {columnName[2]} varchar(255), {columnName[3]} varchar(255), {columnName[4]} varchar(255) );"
+    mycursor.execute(createTableSQL)
+    mydb.commit()
+    df.drop(index=0)
+    print("System log: table created for", userID)
+    df.to_sql(userID, schema="COURSEWORK", con=connection, if_exists='append', index=False, chunksize=1000)
+    
+    messagebox.showinfo("Success!!!", "You have successfully imported a CSV file :D")
+    self.controller.show_frame(mainMenu)
     
     
+    
+class mainMenu(importCSVPage):
+  
+  def __init__(self, parent, controller):
+    
+    ttk.Frame.__init__(self, parent)
+    self.controller = controller
+    self.label = ttk.Label(self, text="todo")
+    self.label.pack()
     
 App = app()
 App.mainloop()
 
-#very proud
