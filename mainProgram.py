@@ -28,8 +28,8 @@ mycursor.execute("USE COURSEWORK;")
 mycursor.execute("CREATE TABLE IF NOT EXISTS userCredentials(username varchar(255) NOT NULL, password varchar(255) NOT NULL, PRIMARY KEY(username));")
 mydb.commit()
 #execute to use the database 
-
-
+global userID
+userID = ""
 loggedIn = False
 
 class app(tk.Tk):
@@ -42,7 +42,7 @@ class app(tk.Tk):
         self.frames = {}  
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
-        for F in (menu, logIn, signUpMenu, importCSVPage, mainMenu):  
+        for F in (menu, logIn, signUpMenu, importCSVPage, mainMenu, searchMenu):  
   
             frame = F(container, self)  
   
@@ -284,7 +284,8 @@ class importCSVPage(ttk.Frame):
     self.backButton.pack(side="left", pady=150,expand=True, ipadx= 100, ipady=100)
     self.importingButton = ttk.Button(self, text="Import CSV", command=lambda: self.importCSV())
     self.importingButton.pack(side="left", pady=150,expand=True, ipadx= 100, ipady=100)
-    
+    self.explanationLabel = ttk.Label(self, text="The CSV file's first row must contain the words below in\nthe exact character(case sensitive):\n- firstName\n- secondName\n- phoneNumber\n- gender\n- email", font=("none, 14"))
+    self.explanationLabel.place(relx=0.35, rely=0.75)
     
     
   def backFunction(self):
@@ -298,6 +299,7 @@ class importCSVPage(ttk.Frame):
     requirementColumn = ['firstName', 'secondName', 'phoneNumber', 'gender', 'email']
     
     file = filedialog.askopenfilename(title="CSV File", initialdir='/', filetypes=[("CSV Files", "*.csv")])
+    global columnName
     columnName = pd.read_csv(file, nrows=1).columns.to_list()    
 
     if len(columnName) == 5:
@@ -312,8 +314,10 @@ class importCSVPage(ttk.Frame):
             continue
           else:
             messagebox.showerror("Error", "The CSV file is in the wrong format.")
+            return
     else:
       messagebox.showerror("Error", "The CSV file is in the wrong format.")
+      return 
     
     df = pd.read_csv(file, header=0, dtype={0:'string', 1:'string', 2:'string', 3:'string', 4:'string', 5:'string'})
     deleteSQL = f"DROP TABLE IF EXISTS `{userID}`;"
@@ -333,12 +337,142 @@ class importCSVPage(ttk.Frame):
     
 class mainMenu(importCSVPage):
   
+    
+  def __init__(self, parent, controller):
+    
+    
+    ttk.Frame.__init__(self, parent)
+    self.controller = controller
+    style = ttk.Style()
+    style.configure("TButton", width= 15,font=(None, 20))
+
+    self.welcomeLabel = ttk.Label(self, text=f"Welcome", font=("Helvetica", 25))
+    self.welcomeLabel.pack(side="top", pady=15)
+    
+    self.backwardButton = ttk.Button(self, text="Log Out", command=lambda: [self.clearTreeData(self.tree), controller.show_frame(menu)])
+    self.backwardButton.place(relx=0.05, rely=0.05)
+    
+    self.tree = ttk.Treeview(self, column=("First name", "Surname", "Gender", "Email", "Phone Number"), show='headings')
+    self.tree.column("#1", anchor="w")
+    self.tree.heading('#1', text="First Name") 
+    
+    self.tree.column("#2", anchor="w")
+    self.tree.heading('#2', text="Surname")
+     
+    self.tree.column("#3", anchor="w")
+    self.tree.heading('#3', text="Gender")
+    
+    self.tree.column("#4", anchor="w")
+    self.tree.heading('#4', text="Email")
+                      
+    self.tree.column("#5", anchor="w")
+    self.tree.heading('#5', text="Phone Number") 
+    
+    self.tree.pack(expand=True)
+    
+    self.refreshDataButton = ttk.Button(self, text="Load data", command=lambda: self.refreshData(self.tree))
+    self.refreshDataButton.pack(side="bottom", pady=10)
+    self.loadNewData = ttk.Button(self, text="Import New Data", command=lambda: [importCSVPage.importCSV(self),self.refreshData(self.tree)])
+    self.loadNewData.pack(side="bottom", pady=10)
+    self.searchButton = ttk.Button(self, text="Search Records", command=lambda: controller.show_frame(searchMenu))
+    self.searchButton.pack(side="bottom", pady=10)
+    
+
+    
+  def clearTreeData(self, tree):
+    for item in tree.get_children():
+      tree.delete(item)
+      
+  def refreshData(self, tree):
+    
+    self.clearTreeData(tree)
+    sql = f"SELECT firstName, secondName, gender, email, phoneNumber FROM `{userID}` LIMIT 100;"
+    mycursor.execute(sql)
+    rows = mycursor.fetchall()
+    for row in rows:
+      tree.insert("", tk.END, values=row)
+      
+
+class searchMenu(mainMenu):
+  
   def __init__(self, parent, controller):
     
     ttk.Frame.__init__(self, parent)
     self.controller = controller
-    self.label = ttk.Label(self, text="todo")
-    self.label.pack()
+    
+    self.firstName = tk.StringVar()
+    self.secondName = tk.StringVar()
+    self.phoneNum = tk.StringVar()
+    self.gender = tk.StringVar()
+    self.email = tk.StringVar()
+    
+    
+    self.fNameLabel = ttk.Label(self, text="First Name:", font=("none, 26"))
+    self.sNameLabel = ttk.Label(self, text="Second Name:", font=("none, 26"))
+    self.phoneLabel = ttk.Label(self, text="Phone Number:", font=("none, 26"))
+    self.genderLabel = ttk.Label(self, text="Gender:", font=("none, 26"))
+    self.emailLabel = ttk.Label(self, text="Email:", font=("none, 26"))
+    
+    
+    self.fNameEntryBox = ttk.Entry(self, textvariable=self.firstName, font=("none, 24"))
+    self.sNameEntryBox = ttk.Entry(self, textvariable=self.secondName, font=("none, 24"))
+    self.phoneEntryBox = ttk.Entry(self, textvariable=self.phoneNum, font=("none, 24"))
+    self.genderEntryBox = ttk.Entry(self, textvariable=self.gender, font=("none, 24"))
+    self.emailEntryBox = ttk.Entry(self, textvariable=self.email, font=("none, 24"))
+    
+    
+    self.submitButton = ttk.Button(self, text="Submit", state='disabled', command=lambda: [self.clear_text()])
+    self.backwardButton = ttk.Button(self, text="Go Back", command=lambda: [controller.show_frame(mainMenu)])
+
+    self.fNameLabel.pack(side= "top", expand=True, pady=(25, 10))
+    self.fNameEntryBox.pack(side= "top", expand=True)
+    
+    self.sNameLabel.pack(side= "top", expand=True, pady=(25, 10))
+    self.sNameEntryBox.pack(side= "top", expand=True,)
+    
+    self.phoneLabel.pack(side= "top", expand=True,  pady=(25, 10))
+    self.phoneEntryBox.pack(side= "top", expand=True)
+    
+    self.genderLabel.pack(side= "top", expand=True, pady=(25, 10))
+    self.genderEntryBox.pack(side= "top", expand=True)
+    
+    self.emailLabel.pack(side= "top", expand=True, pady=(25, 10))
+    self.emailEntryBox.pack(side= "top", expand=True)
+    
+    self.submitButton.pack(side="top", pady= 50,expand=True, ipadx= 60, ipady=50)
+    self.backwardButton.place(relx=0.05, rely=0.05)
+    self.style = ttk.Style(self)
+    self.style.configure('TButton', width=15)
+    
+    
+    self.firstName.trace_add("write", self.statusButton)
+    self.secondName.trace_add("write", self.statusButton)
+    self.phoneNum.trace_add("write", self.statusButton)
+    self.gender.trace_add("write", self.statusButton)
+    self.email.trace_add("write", self.statusButton)
+    
+  def statusButton(self, *args):
+    
+    if(len(self.firstName.get()) ) > 0 or len(self.secondName.get()) > 0 or len(self.phoneNum.get()) > 0 or len(self.email.get()) > 0 or len(self.gender.get()) > 0:
+      
+      self.submitButton.configure(state='normal')
+      
+    else:
+      self.submitButton.configure(state='disabled')
+        
+  def clear_text(self):
+    
+    self.fNameEntryBox.delete(0, 'end')
+    self.sNameEntryBox.delete(0,'end')
+    self.phoneEntryBox.delete(0,'end')
+    self.genderEntryBox.delete(0,'end')
+    self.emailEntryBox.delete(0,'end')
+    
+    
+    
+    
+    
+    
     
 App = app()
 App.mainloop()
