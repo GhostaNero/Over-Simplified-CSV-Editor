@@ -1,4 +1,4 @@
 ignore.py
 test.py
 __pycache__/
-test_data.csv
+*.csv
