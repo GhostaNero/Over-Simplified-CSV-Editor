@@ -153,7 +153,7 @@ class signUpMenu(frontPageTemplate):
       
     def explanationText(self):
       
-      self.explanationLabel = ttk.Label(self, text="1. Username can only contain english\n    and numeric characters.\n2. Password must contain english characters, \n    numeric characters and special characters.", font=("none, 14"))
+      self.explanationLabel = ttk.Label(self, text="1. Username can only contain english\n    and numeric characters\n    Also not case-sensitve.\n2. Password must contain english characters, \n    numeric characters and special characters.", font=("none, 14"))
       self.explanationLabel.pack(side="top", expand=True, pady=10)
       
     def submit(self):
@@ -410,6 +410,7 @@ class searchMenu(mainMenu):
     self.fNameLabel = ttk.Label(self, text="First Name:", font=("none, 26"))
     self.sNameLabel = ttk.Label(self, text="Second Name:", font=("none, 26"))
     self.phoneLabel = ttk.Label(self, text="Phone Number:", font=("none, 26"))
+    self.phoneExplanationLabel = ttk.Label(self, text="note: please add your country code\nto the number\nExample: +44741234567", font=("none, 15"))
     self.genderLabel = ttk.Label(self, text="Gender:", font=("none, 26"))
     self.emailLabel = ttk.Label(self, text="Email:", font=("none, 26"))
     
@@ -421,7 +422,7 @@ class searchMenu(mainMenu):
     self.emailEntryBox = ttk.Entry(self, textvariable=self.email, font=("none, 24"))
     
     
-    self.submitButton = ttk.Button(self, text="Submit", state='disabled', command=lambda: [self.clear_text()])
+    self.submitButton = ttk.Button(self, text="Submit", state='disabled', command=lambda: [self.searchFunction(), self.clear_text()])
     self.backwardButton = ttk.Button(self, text="Go Back", command=lambda: [controller.show_frame(mainMenu)])
 
     self.fNameLabel.pack(side= "top", expand=True, pady=(25, 10))
@@ -430,7 +431,8 @@ class searchMenu(mainMenu):
     self.sNameLabel.pack(side= "top", expand=True, pady=(25, 10))
     self.sNameEntryBox.pack(side= "top", expand=True,)
     
-    self.phoneLabel.pack(side= "top", expand=True,  pady=(25, 10))
+    self.phoneLabel.pack(side= "top", expand=True,  pady=(25,0))
+    self.phoneExplanationLabel.pack(side= "top", expand=True,  pady=(10, 10))
     self.phoneEntryBox.pack(side= "top", expand=True)
     
     self.genderLabel.pack(side= "top", expand=True, pady=(25, 10))
@@ -468,12 +470,89 @@ class searchMenu(mainMenu):
     self.genderEntryBox.delete(0,'end')
     self.emailEntryBox.delete(0,'end')
     
+  def destroyWidget(self):
+    pass
+  
+  def searchFunction(self):
+    
+    firstName = self.firstName.get()
+    secondName = self.secondName.get()
+    phoneNumber = self.phoneNum.get()
+    gender = self.gender.get()
+    email = self.email.get()
+    
+    sql = f"SELECT * FROM {userID}"
+    sql, parms = self.dynamicSQL(firstName, secondName, phoneNumber, gender, email, sql)
+    
+    print(sql)
+    print(parms)
+
+  def dynamicSQL(self, firstName, secondName, phoneNumber, gender, email, sql):
+    
+    conditions = []
+    parms = []
+    
+    if firstName:
+      conditions.append("firstname = ?")
+      parms.append(firstName)
     
     
+    if secondName:
+      
+      conditions.append("secondName = ?")
+      parms.append(secondName)
     
     
+    if phoneNumber:
+      
+      try:
+        
+        num = phonenumbers.parse(phoneNumber)
+        if phonenumbers.is_possible_number(num) == True:
+          
+          conditions.append("phoneNumber = ?")
+          parms.append(phoneNumber)
+      
+        else:
+          messagebox.showerror("Error", "This doesn't seem like a correct phone number")
+          return 1
+        
+      except:
+        messagebox.showerror("Error", "This doesn't seem like a correct phone number, please remember to type the country code.")
+        return 1
+        
     
+    if gender:
+      
+      if gender not in ["Non-binary" ,"Male", "Female"]:
+        
+        messagebox.showerror("Error", "This doesn't seem like a correct gender, its only Non-binary, Male or Female")
+        return 1
+      
+      else:
+        
+        conditions.append("gender = ?")
+        parms.append(gender)
+        
+    if email:
+      
+      if ".com" in email and "@" in email:
+        
+        conditions.append("email = ?")
+        parms.append(email)
+
+      else:
+        
+        messagebox.showerror("Error", "This doesn't seem like a correct email")
+        
     
+    sql += " WHERE " + " AND ".join(conditions)
+
+    return sql, parms
+  def createTreeView(self):
+    
+    pass
+      
 App = app()
 App.mainloop()
 
