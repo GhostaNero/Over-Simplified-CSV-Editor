@@ -1,26 +1,37 @@
 import csv
 import random
 
-first_names = ['John', 'Jane', 'Alex', 'Chris', 'Pat', 'Taylor', 'Jordan', 'Morgan', 'Casey', 'Jamie', 'Martina', 'Lewis', 'Daniel', ' Helen', 'Andrew', 'Nero', 'Eson']
-second_names = ['Doe', 'Smith', 'Brown', 'Johnson', 'Taylor', 'Anderson', 'Thomas', 'Jackson', 'White', 'Harris', 'Xue', 'Dong', 'Wang', 'He', 'Yu', 'Takahashi', 'Lin']
-genders = ['Male', 'Female', 'Non-binary']
+# Function to generate random email providers
+def random_email_provider():
+    providers = ["gmail.com", "outlook.com", "yahoo.com", "hotmail.com", "icloud.com"]
+    return random.choice(providers)
 
-def generate_email(first_name, second_name):
-    return f'{first_name.lower()}{second_name.lower()}@example.com'
+# Function to generate random phone numbers with international country code
+def random_phone_number():
+    country_codes = ["+1", "+44", "+61", "+81", "+33", "+49", "+91", "+34"]
+    return f"{random.choice(country_codes)}-{random.randint(1000000000, 9999999999)}"
 
-def generate_phone_number():
-    return f'{random.randint(100,999)}-{random.randint(100,999)}-{random.randint(1000,9999)}'
+# Sample data for first names and second names
+first_names = ["John", "Jane", "Alice", "Bob", "Charlie", "Daisy", "Eve", "Frank", "Martina", "Lewis", "Nero", "Eson", "Helen", "Saito", "Helion", "Tenji"]
+second_names = ["Smith", "Johnson", "Williams", "Jones", "Brown", "Davis", "Wilson", "Moore", "Dong", "Xue", "Takahashi", "Lin", "He", "Renji", "Marksman","Togifushi"]
 
-with open('test_data.csv', 'w', newline='') as file:
-    writer = csv.writer(file)
-    writer.writerow(['firstName', 'secondName', 'gender', 'email', 'phoneNumber'])
-    
-    for _ in range(10000):
-        first_name = random.choice(first_names)
-        second_name = random.choice(second_names)
-        gender = random.choice(genders)
-        email = generate_email(first_name, second_name)
-        phone_number = generate_phone_number()
-        writer.writerow([first_name, second_name, gender, email, phone_number])
+# Field names
+fields = ["firstName", "secondName", "email", "gender", "phoneNumber"]
 
-print("CSV file with 10000 rows has been generated.")
+# Generating 100 records
+records = []
+for _ in range(100000):
+    first_name = random.choice(first_names)
+    second_name = random.choice(second_names)
+    email = f"{first_name.lower()}.{second_name.lower()}@{random_email_provider()}"
+    gender = random.choice(["Male", "Female", "Non-Binary"])
+    phone_number = random_phone_number()
+    records.append([first_name, second_name, email, gender, phone_number])
+
+# Writing to CSV file
+with open("data.csv", "w", newline="") as csvfile:
+    csvwriter = csv.writer(csvfile)
+    csvwriter.writerow(fields)
+    csvwriter.writerows(records)
+
+print("CSV file created successfully.")
