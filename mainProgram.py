@@ -455,6 +455,7 @@ class searchMenu(mainMenu):
     
     self.showSearchMenu()
     
+    
   def statusButton(self, *args):
     
     if(len(self.firstName.get()) ) > 0 or len(self.secondName.get()) > 0 or len(self.phoneNum.get()) > 0 or len(self.email.get()) > 0 or len(self.gender.get()) > 0:
@@ -463,6 +464,7 @@ class searchMenu(mainMenu):
       
     else:
       self.submitButton.configure(state='disabled')
+        
         
   def clear_text(self):
     
@@ -498,6 +500,7 @@ class searchMenu(mainMenu):
     
     self.result.place_forget()
     self.tree.pack_forget()
+  
     
   def hideSearchMenu(self):
     
@@ -517,6 +520,7 @@ class searchMenu(mainMenu):
     
     self.submitButton.pack_forget()
   
+  
   def searchFunction(self, firstName, secondName, phoneNumber, gender, email):
     
     sql = f"SELECT * FROM {userID}"
@@ -526,6 +530,7 @@ class searchMenu(mainMenu):
     rows = mycursor.fetchall()
     
     return rows
+
 
   def dynamicSQL(self, firstName, secondName, phoneNumber, gender, email, sql):
     
