@@ -521,7 +521,7 @@ class searchMenu(mainMenu):
     self.emailEntryBox.pack_forget()
     
     self.submitButton.pack_forget()
-  
+      
   
   def searchFunction(self, firstName, secondName, phoneNumber, gender, email):
     
@@ -619,9 +619,13 @@ class searchMenu(mainMenu):
       
       for row in rows:
         self.tree.insert("", tk.END, values=row)
+        
+      return 0
       
     else:
+      
       messagebox.showinfo("Hmm", "It seems that there is nothing...")
+      return 1
       
       
       
@@ -634,7 +638,7 @@ class explanationMenu(mainMenu):
     
     self.explanationLabel = ttk.Label(
       self, 
-      text="When you proceed to the next menu you are required to enter credentials first.\nIf there is record present then you are allowed to choose either alter the record or delete it.\nIf there is no record present then you are allowed to add a new record.",
+      text="When you proceed to the next menu you are required to enter credentials first.\nIf there is record present then you are allowed to choose either alter the record or delete it.\nIf there is no record present then you are allowed to add a new record.\nTo delete the whole CSV file, you can do so by clicking the 'Delete CSV' button.",
       font=("none, 20")
       )
     self.explanationLabel.place(relx=0.20, rely=0.35)
@@ -645,12 +649,41 @@ class explanationMenu(mainMenu):
     
     self.backwardButton = ttk.Button(self, text="Back", command=lambda: controller.show_frame(mainMenu))
     self.alterButton = ttk.Button(self, text="Proceed", command=lambda: controller.show_frame(alterationRecord))
+    self.deleteCSVButton = ttk.Button(self, text="Delete CSV", command=lambda: self.deleteCSV(controller))
+    
     
     self.backwardButton.pack(side="left", anchor="s",expand=True, ipadx= 100, ipady=100, pady=100)
     self.alterButton.pack(side="left", anchor="s",expand=True, ipadx= 100, ipady=100, pady=100)
+    self.deleteCSVButton.pack(side="left", anchor="s",expand=True, ipadx= 100, ipady=100, pady=100)
     
     
+  def deleteCSV(self, controller):
     
+    choice = messagebox.askokcancel(title="Delete CSV", message="Are you sure you want to delete the CSV file?", icon="warning")
+    
+    if choice == True:
+      
+      secondChoice = messagebox.askokcancel(title="Delete CSV", message="Are you very sure?", icon="warning")
+      
+      if secondChoice == True:
+        
+        deleteSQL = f"DELETE FROM {userID};"
+        mycursor.execute(deleteSQL)
+        mydb.commit()
+        messagebox.showinfo("Success", "You have deleted the CSV file")
+        controller.show_frame(mainMenu)
+        return 0 
+
+      else:
+        
+        pass
+      
+      
+    messagebox.showinfo("Info", "Returning you to the main menu.")
+    controller.show_frame(mainMenu)
+    return 0
+    
+      
        
 class alterationRecord(searchMenu):
   
@@ -658,6 +691,15 @@ class alterationRecord(searchMenu):
     
     super().__init__(parent, controller)
     self.controller = controller
+  
+  
+  def hideResultMenu(self):
+    
+    self.result.place_forget()
+    self.tree.pack_forget()
+    self.alteration.place_forget()
+    self.delete.place_forget()
+    self.text.place_forget()
     
     
   def createTreeView(self, controller):
@@ -674,11 +716,22 @@ class alterationRecord(searchMenu):
     if rows:
       
       self.hideSearchMenu()
+      
+      style = ttk.Style()
+      
+      
       self.result = ttk.Label(self, text="Result record", font=(None, 30))
       self.text = ttk.Label(self, text="Is the record(s) correct?", font=(None, 15))
-      self.result.place(relx=0.465, rely = 0.1)
-      self.text.place(relx=0.465, rely = 0.2)
+      
+      self.result.place(relx=0.43, rely = 0.1)
+      self.text.place(relx=0.435, rely = 0.2)
       self.tree.pack(expand=True)
+      
+      self.alteration = ttk.Button(self, text="Alter", command=lambda: controller.show_frame(mainMenu))
+      self.delete = ttk.Button(self, text="Delete", command=lambda: [self.deleteSQL(firstName, secondName, phoneNumber, gender, email), self.hideResultMenu(), self.showSearchMenu(), controller.show_frame(mainMenu)])
+      
+      self.alteration.place(relx= 0.185, rely= 0.75, height=200, width=400)
+      self.delete.place(relx= 0.58, rely=0.75, height=200, width=400)     
       
       for row in rows:
         self.tree.insert("", tk.END, values=row)
@@ -697,18 +750,30 @@ class alterationRecord(searchMenu):
           mydb.commit()
           messagebox.showinfo("Success", "You have added a new record!")
           controller.show_frame(mainMenu)
-          
+          return 0
+        
         except:
           
           messagebox.showerror("Error", "Something happened while trying to add a new record, try again later.")
           return 1
-        
-      
-      
-    
-    
-    
 
+  def deleteSQL(self, firstName, secondName, phoneNumber, email, gender):
+    
+    choice = messagebox.askokcancel(title="Delete", message="Are you sure you want to delete the record?", icon="warning")
+    
+    if choice == True:
+      
+      sql = f"DELETE FROM {userID}"
+      sql, parms= searchMenu.dynamicSQL(self, firstName, secondName, phoneNumber, email, gender, sql)
+      mycursor.execute(sql, parms)
+      mydb.commit()
+      messagebox.showinfo("Success", "You have deleted the record!")
+      return 0
+    
+    else:
+      
+      pass
+  
     
 App = app()
 App.mainloop()
