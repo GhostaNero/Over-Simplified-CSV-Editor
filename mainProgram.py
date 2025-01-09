@@ -42,7 +42,7 @@ class app(tk.Tk):
         self.frames = {}  
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
-        for F in (menu, logIn, signUpMenu, importCSVPage, mainMenu, searchMenu, explanationMenu, alterationRecord):  
+        for F in (menu, logIn, signUpMenu, importCSVPage, mainMenu, searchMenu, explanationMenu, deletionRecord, alterationRecord, additionRecord):  
   
             frame = F(container, self)  
   
@@ -372,13 +372,12 @@ class mainMenu(importCSVPage):
     
     self.refreshDataButton = ttk.Button(self, text="Refresh Data", command=lambda: self.refreshData(self.tree))
     self.loadNewData = ttk.Button(self, text="Import New Data", command=lambda: [importCSVPage.importCSV(self),self.refreshData(self.tree)])
-    self.searchButton = ttk.Button(self, text="Search Records", command=lambda: controller.show_frame(searchMenu))
-    self.alterButton = ttk.Button(self, text="Alter Records", command=lambda: controller.show_frame(explanationMenu))
-
+    self.toolButton = ttk.Button(self, text="Tools", command=lambda: controller.show_frame(searchMenu))
+    
     self.refreshDataButton.place(relx=0.4257, rely=0.79)
     self.loadNewData.place(relx=0.4257, rely= 0.86)
-    self.searchButton.place(relx=0.4257, rely= 0.93)
-    self.alterButton.place(relx=0.4257, rely= 0.72)
+    self.toolButton.place(relx=0.4257, rely= 0.93)
+
     
 
     
@@ -396,11 +395,13 @@ class mainMenu(importCSVPage):
       tree.insert("", tk.END, values=row)
       
 
-class searchMenu(mainMenu):
+class bluePrint(mainMenu):
+  
   
   def __init__(self, parent, controller):
     
     ttk.Frame.__init__(self, parent)
+    
     self.controller = controller
     
     self.firstName = tk.StringVar()
@@ -409,6 +410,299 @@ class searchMenu(mainMenu):
     self.gender = tk.StringVar()
     self.email = tk.StringVar()
     
+    self.firstName.trace_add("write", self.statusButton)
+    self.secondName.trace_add("write", self.statusButton)
+    self.phoneNum.trace_add("write", self.statusButton)
+    self.gender.trace_add("write", self.statusButton)
+    self.email.trace_add("write", self.statusButton)
+    
+    
+  def userInputs(self, controller):
+    
+    self.fNameLabel = ttk.Label(self, text="First Name:", font=("none, 26"))
+    self.sNameLabel = ttk.Label(self, text="Second Name:", font=("none, 26"))
+    self.phoneLabel = ttk.Label(self, text="Phone Number:", font=("none, 26"))
+    self.phoneExplanationLabel = ttk.Label(self, text="note: please add your country code\nto the number\nExample: +44741234567", font=("none, 15"))
+    self.genderLabel = ttk.Label(self, text="Gender:", font=("none, 26"))
+    self.emailLabel = ttk.Label(self, text="Email:", font=("none, 26"))
+    
+    
+    self.fNameEntryBox = ttk.Entry(self, textvariable=self.firstName, font=("none, 24"))
+    self.sNameEntryBox = ttk.Entry(self, textvariable=self.secondName, font=("none, 24"))
+    self.phoneEntryBox = ttk.Entry(self, textvariable=self.phoneNum, font=("none, 24"))
+    self.genderEntryBox = ttk.Entry(self, textvariable=self.gender, font=("none, 24"))
+    self.emailEntryBox = ttk.Entry(self, textvariable=self.email, font=("none, 24"))
+
+    self.actionButton = ttk.Button(self, text="Submit", state='disabled', command=lambda: [self.action()])
+    
+    self.backwardButton = ttk.Button(self, text="Go Back", command=lambda: [self.clear_text(), self.showSearchMenu(), controller.show_frame(mainMenu)])
+    self.backwardButton.place(relx=0.05, rely=0.05)
+    
+    
+    
+  def resultMenu(self, controller):
+    
+    self.resultLable()
+    
+    self.tree = ttk.Treeview(self, column=("First name", "Surname", "Gender", "Email", "Phone Number"), show='headings')
+    self.tree.column("#1", anchor="w")
+    self.tree.heading('#1', text="First Name") 
+    
+    self.tree.column("#2", anchor="w")
+    self.tree.heading('#2', text="Surname")
+    
+    self.tree.column("#3", anchor="w")
+    self.tree.heading('#3', text="Gender")
+    
+    self.tree.column("#4", anchor="w")
+    self.tree.heading('#4', text="Email")
+                      
+    self.tree.column("#5", anchor="w")
+    self.tree.heading('#5', text="Phone Number") 
+    
+    self.button(controller)  
+  
+    
+  def button(self, controller):
+    
+    pass
+    
+    
+  def action(self):
+    
+    pass
+
+
+  def statusButton(self, *args):
+    
+    if(len(self.firstName.get()) ) > 0 or len(self.secondName.get()) > 0 or len(self.phoneNum.get()) > 0 or len(self.email.get()) > 0 or len(self.gender.get()) > 0:
+      
+      self.actionButton.configure(state='normal')
+      
+    else:
+      self.actionButton.configure(state='disabled')
+      
+      
+  def clear_text(self):
+    
+    self.fNameEntryBox.delete(0, 'end')
+    self.sNameEntryBox.delete(0,'end')
+    self.phoneEntryBox.delete(0,'end')
+    self.genderEntryBox.delete(0,'end')
+    self.emailEntryBox.delete(0,'end')
+
+
+  def showSearchMenu(self):
+    
+    self.fNameLabel.pack(side= "top", expand=True, pady=(25, 10))
+    self.fNameEntryBox.pack(side= "top", expand=True)
+    
+    self.sNameLabel.pack(side= "top", expand=True, pady=(25, 10))
+    self.sNameEntryBox.pack(side= "top", expand=True,)
+    
+    self.phoneLabel.pack(side= "top", expand=True,  pady=(25,0))
+    self.phoneExplanationLabel.pack(side= "top", expand=True,  pady=(10, 10))
+    self.phoneEntryBox.pack(side= "top", expand=True)
+    
+    self.genderLabel.pack(side= "top", expand=True, pady=(25, 10))
+    self.genderEntryBox.pack(side= "top", expand=True)
+    
+    self.emailLabel.pack(side= "top", expand=True, pady=(25, 10))
+    self.emailEntryBox.pack(side= "top", expand=True)
+    
+    self.actionButton.pack(side="top", pady= 50,expand=True, ipadx= 60, ipady=50)
+    
+    self.style = ttk.Style(self)
+    self.style.configure('TButton', width=15)
+
+
+
+  def hideSearchMenu(self):
+    
+    self.fNameLabel.pack_forget()
+    self.sNameLabel.pack_forget()
+    self.phoneLabel.pack_forget()
+    self.phoneExplanationLabel.pack_forget()
+    self.genderLabel.pack_forget()
+    self.emailLabel.pack_forget()
+    
+    self.fNameEntryBox.pack_forget()
+    self.sNameEntryBox.pack_forget()
+    self.phoneEntryBox.pack_forget()
+    self.genderEntryBox.pack_forget()
+    self.phoneEntryBox.pack_forget()
+    self.emailEntryBox.pack_forget()
+    
+    self.actionButton.pack_forget()
+
+
+  def dynamicSQL(self, firstName, secondName, phoneNumber, gender, email, sql):
+      
+      conditions = []
+      parms = []
+      
+      if firstName:
+        conditions.append("firstname = %s")
+        parms.append(firstName)
+      
+      
+      if secondName:
+        
+        conditions.append("secondName = %s")
+        parms.append(secondName)
+      
+      
+      if phoneNumber:
+        
+        try:
+          
+          num = phonenumbers.parse(phoneNumber)
+          if phonenumbers.is_possible_number(num) == True:
+            
+            conditions.append("phoneNumber = %s")
+            parms.append(phoneNumber)
+        
+          else:
+            messagebox.showerror("Error", "This doesn't seem like a correct phone number")
+            return 1
+          
+        except:
+          messagebox.showerror("Error", "This doesn't seem like a correct phone number, please remember to type the country code.")
+          return 1
+          
+      
+      if gender:
+        
+        if gender not in ["Non-binary" ,"Male", "Female"]:
+          
+          messagebox.showerror("Error", "This doesn't seem like a correct gender, its only Non-binary, Male or Female")
+          return 1
+        
+        else:
+          
+          conditions.append("gender = %s")
+          parms.append(gender)
+          
+      if email:
+        
+        if ".com" in email and "@" in email:
+          
+          conditions.append("email = %s")
+          parms.append(email)
+
+        else:
+          
+          messagebox.showerror("Error", "This doesn't seem like a correct email")
+          
+      
+      sql += " WHERE " + " AND ".join(conditions)
+
+      return sql, parms
+  
+
+class searchMenu(bluePrint):
+  
+  def __init__(self, parent, controller):
+    
+    super().__init__(parent, controller)
+    
+    
+    bluePrint.userInputs(self, controller)
+    
+    bluePrint.showSearchMenu(self)
+    
+    bluePrint.resultMenu(self, controller)
+    
+  
+  def resultLable(self):
+    
+    self.result = ttk.Label(self, text="Result record", font=(None, 30))
+    self.result.place(relx=0.435, rely = 0.1)
+
+    
+  def action(self):
+      
+    firstName = self.firstName.get()
+    secondName = self.secondName.get()
+    phoneNumber = self.phoneNum.get()
+    email = self.email.get()
+    gender = self.gender.get()
+    
+    bluePrint.clear_text(self)
+    rows = self.searchFunction(firstName, secondName, phoneNumber, gender, email)
+    
+  def searchFunction(self, firstName, secondName, phoneNumber, gender, email):
+    
+    sql = f"SELECT * FROM {userID}"
+    sql, parms = bluePrint.dynamicSQL(self,firstName, secondName, phoneNumber, gender, email, sql)
+    print(sql, parms)
+    mycursor.execute(sql, parms)
+    rows = mycursor.fetchall()
+    
+    return rows
+  
+
+
+class deletionRecord(bluePrint):
+  
+  pass
+
+class explanationMenu(bluePrint):
+  
+  pass
+
+class alterationRecord(bluePrint):
+  
+  pass
+
+class additionRecord(bluePrint):
+  
+  pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''
+class utility(mainMenu):
+  
+  
+  def variableCreation(self):
+    
+    self.firstName = tk.StringVar()
+    self.secondName = tk.StringVar()
+    self.phoneNum = tk.StringVar()
+    self.gender = tk.StringVar()
+    self.email = tk.StringVar()
+    
+    
+    self.firstName.trace_add("write", self.statusButton)
+    self.secondName.trace_add("write", self.statusButton)
+    self.phoneNum.trace_add("write", self.statusButton)
+    self.gender.trace_add("write", self.statusButton)
+    self.email.trace_add("write", self.statusButton)
+    
+  
+  def userInputs(self, controller):
     
     self.fNameLabel = ttk.Label(self, text="First Name:", font=("none, 26"))
     self.sNameLabel = ttk.Label(self, text="Second Name:", font=("none, 26"))
@@ -429,8 +723,11 @@ class searchMenu(mainMenu):
     self.backwardButton = ttk.Button(self, text="Go Back", command=lambda: [self.clear_text(), self.showSearchMenu(), controller.show_frame(mainMenu)])
     self.backwardButton.place(relx=0.05, rely=0.05)
     
+  
+  def resultMenu(self, controller):
     
-    self.result = ttk.Label(self, text="Results", font=(None, 30))
+    self.resultLable()
+    
     self.tree = ttk.Treeview(self, column=("First name", "Surname", "Gender", "Email", "Phone Number"), show='headings')
     self.tree.column("#1", anchor="w")
     self.tree.heading('#1', text="First Name") 
@@ -446,16 +743,20 @@ class searchMenu(mainMenu):
                       
     self.tree.column("#5", anchor="w")
     self.tree.heading('#5', text="Phone Number") 
+  
+    self.buttonFunction(controller)
     
     
+  def buttonFunction(self, controller):
     
-    self.firstName.trace_add("write", self.statusButton)
-    self.secondName.trace_add("write", self.statusButton)
-    self.phoneNum.trace_add("write", self.statusButton)
-    self.gender.trace_add("write", self.statusButton)
-    self.email.trace_add("write", self.statusButton)
+    pass
+  
+  def resultLable(self):
     
-    self.showSearchMenu()
+    pass
+  
+  
+  
     
     
   def statusButton(self, *args):
@@ -612,6 +913,10 @@ class searchMenu(mainMenu):
     
     if rows:
       
+      
+      for item in self.tree.get_children():
+        self.tree.delete(item)
+      
       self.hideSearchMenu()
       
       self.result.place(relx=0.465, rely = 0.1)
@@ -715,6 +1020,9 @@ class alterationRecord(searchMenu):
     
     if rows:
       
+      for item in self.tree.get_children():
+        self.tree.delete(item)
+      
       self.hideSearchMenu()
       
       style = ttk.Style()
@@ -773,7 +1081,7 @@ class alterationRecord(searchMenu):
     else:
       
       pass
-  
+  '''
     
 App = app()
 App.mainloop()
