@@ -42,7 +42,7 @@ class app(tk.Tk):
         self.frames = {}  
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
-        for F in (menu, logIn, signUpMenu, importCSVPage, mainMenu, searchMenu):  
+        for F in (menu, logIn, signUpMenu, importCSVPage, mainMenu, searchMenu, explanationMenu, alterationRecord):  
   
             frame = F(container, self)  
   
@@ -50,7 +50,7 @@ class app(tk.Tk):
   
             frame.grid(row=0, column=0, sticky="nsew")  
   
-        self.show_frame(mainMenu)  
+        self.show_frame(menu)  
   
     def show_frame(self, cont):  
   
@@ -373,10 +373,12 @@ class mainMenu(importCSVPage):
     self.refreshDataButton = ttk.Button(self, text="Refresh Data", command=lambda: self.refreshData(self.tree))
     self.loadNewData = ttk.Button(self, text="Import New Data", command=lambda: [importCSVPage.importCSV(self),self.refreshData(self.tree)])
     self.searchButton = ttk.Button(self, text="Search Records", command=lambda: controller.show_frame(searchMenu))
+    self.alterButton = ttk.Button(self, text="Alter Records", command=lambda: controller.show_frame(explanationMenu))
 
     self.refreshDataButton.place(relx=0.4257, rely=0.79)
     self.loadNewData.place(relx=0.4257, rely= 0.86)
     self.searchButton.place(relx=0.4257, rely= 0.93)
+    self.alterButton.place(relx=0.4257, rely= 0.72)
     
 
     
@@ -423,7 +425,7 @@ class searchMenu(mainMenu):
     self.emailEntryBox = ttk.Entry(self, textvariable=self.email, font=("none, 24"))
     
     
-    self.submitButton = ttk.Button(self, text="Submit", state='disabled', command=lambda: [self.createTreeView()])
+    self.submitButton = ttk.Button(self, text="Submit", state='disabled', command=lambda: [self.createTreeView(controller)])
     self.backwardButton = ttk.Button(self, text="Go Back", command=lambda: [self.clear_text(), self.showSearchMenu(), controller.show_frame(mainMenu)])
     self.backwardButton.place(relx=0.05, rely=0.05)
     
@@ -597,7 +599,7 @@ class searchMenu(mainMenu):
   
   
   
-  def createTreeView(self):
+  def createTreeView(self, controller):
     
     firstName = self.firstName.get()
     secondName = self.secondName.get()
@@ -620,8 +622,94 @@ class searchMenu(mainMenu):
       
     else:
       messagebox.showinfo("Hmm", "It seems that there is nothing...")
-    
       
+      
+      
+class explanationMenu(mainMenu):
+  
+  def __init__(self, parent, controller):
+    
+    ttk.Frame.__init__(self, parent)
+    self.controller = controller
+    
+    self.explanationLabel = ttk.Label(
+      self, 
+      text="When you proceed to the next menu you are required to enter credentials first.\nIf there is record present then you are allowed to choose either alter the record or delete it.\nIf there is no record present then you are allowed to add a new record.",
+      font=("none, 20")
+      )
+    self.explanationLabel.place(relx=0.20, rely=0.35)
+
+
+    style = ttk.Style()
+    style.configure("TButton", width=20,font=(None, 20))
+    
+    self.backwardButton = ttk.Button(self, text="Back", command=lambda: controller.show_frame(mainMenu))
+    self.alterButton = ttk.Button(self, text="Proceed", command=lambda: controller.show_frame(alterationRecord))
+    
+    self.backwardButton.pack(side="left", anchor="s",expand=True, ipadx= 100, ipady=100, pady=100)
+    self.alterButton.pack(side="left", anchor="s",expand=True, ipadx= 100, ipady=100, pady=100)
+    
+    
+    
+       
+class alterationRecord(searchMenu):
+  
+  def __init__(self, parent, controller):
+    
+    super().__init__(parent, controller)
+    self.controller = controller
+    
+    
+  def createTreeView(self, controller):
+    
+    firstName = self.firstName.get()
+    secondName = self.secondName.get()
+    phoneNumber = self.phoneNum.get()
+    gender = self.gender.get()
+    email = self.email.get()
+    
+    self.clear_text()
+    rows = self.searchFunction(firstName, secondName, phoneNumber, gender, email)
+    
+    if rows:
+      
+      self.hideSearchMenu()
+      self.result = ttk.Label(self, text="Result record", font=(None, 30))
+      self.text = ttk.Label(self, text="Is the record(s) correct?", font=(None, 15))
+      self.result.place(relx=0.465, rely = 0.1)
+      self.text.place(relx=0.465, rely = 0.2)
+      self.tree.pack(expand=True)
+      
+      for row in rows:
+        self.tree.insert("", tk.END, values=row)
+      
+    else:
+      
+      choice = messagebox.askokcancel(title="Hmmm", message="It seems that there is nothing, would you like to add a new record?", icon="warning")
+      
+      if choice == True:
+        
+        try:
+          
+          sql = f"INSERT INTO `{userID}` (firstName, secondName, phoneNumber, email, gender) VALUES(%s, %s, %s, %s, %s);"
+          parameter =  [firstName, secondName, phoneNumber, email, gender]
+          mycursor.execute(sql, parameter)
+          mydb.commit()
+          messagebox.showinfo("Success", "You have added a new record!")
+          controller.show_frame(mainMenu)
+          
+        except:
+          
+          messagebox.showerror("Error", "Something happened while trying to add a new record, try again later.")
+          return 1
+        
+      
+      
+    
+    
+    
+
+    
 App = app()
 App.mainloop()
 
