@@ -16,7 +16,7 @@ Please do not actually use this to store any personal information, it can be hac
 
 # How to use
 
-======================
+
 
 This program will load into an log-in / sign up page, that is very self explanatory.
 Then when you do log in you will be asked to import a CSV file
@@ -29,7 +29,7 @@ Though if you wish to generate a CSV test data, I have also attached the program
 
 
 # Comments
-====================
+
 
 As I said before this program's DB is not cloud hosted so I will try to change that, also the code is not efficient and done well enough.
 I would like to make it more dynamic in the future, but given the inexperience with OOP and my age I am quite proud.
