@@ -1,5 +1,5 @@
 # Introduction
-========================
+
 This program is the course work for Lewis JiaBin Xue's Advanced Higher Computer Science for the sessions 2024-2025. 
 Users are not allowed redistribute any work that are in this repo without the permission of the creator. (Myself)
 
