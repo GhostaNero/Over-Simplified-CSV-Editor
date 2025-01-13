@@ -373,13 +373,29 @@ class mainMenu(importCSVPage):
     self.refreshDataButton = ttk.Button(self, text="Refresh Data", command=lambda: self.refreshData(self.tree))
     self.loadNewData = ttk.Button(self, text="Import New Data", command=lambda: [importCSVPage.importCSV(self),self.refreshData(self.tree)])
     self.toolButton = ttk.Button(self, text="Tools", command=lambda: controller.show_frame(toolMenu))
+    self.exportButton = ttk.Button(self, text="Export CSV", command=lambda: self.exportCSV())
     
     self.refreshDataButton.place(relx=0.4257, rely=0.79)
     self.loadNewData.place(relx=0.4257, rely= 0.86)
     self.toolButton.place(relx=0.4257, rely= 0.93)
+    self.exportButton.place(relx=0.4257, rely= 0.72)
 
     
-
+  def exportCSV(self):
+    
+    file = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV Files", "*.csv")])
+    columnSQL = f"Show columns from {userID};"
+    mycursor.execute(columnSQL)
+    columns = mycursor.fetchall()
+    columns = [column[0] for column in columns]
+    sql = f"SELECT * FROM {userID}"
+    mycursor.execute(sql)
+    rows = mycursor.fetchall()
+    df = pd.DataFrame(rows, columns=columns)
+    df.to_csv(file, index=False)
+    messagebox.showinfo("Success", "You have exported the CSV file")
+    
+    
     
   def clearTreeData(self, tree):
     for item in tree.get_children():
@@ -391,12 +407,12 @@ class mainMenu(importCSVPage):
     sql = f"SELECT firstName, secondName, gender, email, phoneNumber FROM `{userID}` LIMIT 100;"
     mycursor.execute(sql)
     rows = mycursor.fetchall()
-    rows = self.binary_sort(rows)
+    rows = self.bubble_sort(rows)
     for row in rows:
       tree.insert("", tk.END, values=row)
       
       
-  # Function to perform binary sort using ord and chr
+  
   def bubble_sort(self, rows):
     
     length = len(rows)
@@ -763,7 +779,7 @@ class deletionRecord(searchMenu):
       self.resultLable.place(relx=0.435, rely = 0.1)
       bluePrint.showResultMenu(self)
       
-      self.deleteButton = ttk.Button(self, text="Delete", command=lambda: [self.delete(firstName, secondName, phoneNumber, gender, email), self.hideResultMenu(), self.showSearchMenu(), self.controller.show_frame(mainMenu)])
+      self.deleteButton = ttk.Button(self, text="Delete", command=lambda: [self.delete(firstName, secondName, phoneNumber, gender, email), searchMenu.backButtonFunction(self), self.deleteButton.place_forget(), self.showSearchMenu(), self.controller.show_frame(mainMenu)])
       self.deleteButton.place(relx=0.435, rely=0.75)
       
       print(rows)
