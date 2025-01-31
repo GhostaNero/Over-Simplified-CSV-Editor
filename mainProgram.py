@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, ttk, filedialog
 import sv_ttk
-import os
 import sys
 import mysql.connector
 import ignore
@@ -13,12 +12,16 @@ import re
 
 PASSWORD = ignore.password
 
+#store the special character in a regex object
 regex = re.compile('[@_!#$%^&*()<>?/\|}{~:]')
+
+#establish a connection to the database
 mydb = mysql.connector.connect(
       host="localhost",
       user="root",
       password=PASSWORD
     )
+#establish a connection to the database using sqlalchemy
 connection = sqlalchemy.create_engine(f'mysql+mysqlconnector://root:{PASSWORD}@localhost:3306')
 #establish a cursor to interact with the database
 mycursor = mydb.cursor(buffered=True)
@@ -28,286 +31,377 @@ mycursor.execute("USE COURSEWORK;")
 mycursor.execute("CREATE TABLE IF NOT EXISTS userCredentials(username varchar(255) NOT NULL, password varchar(255) NOT NULL, PRIMARY KEY(username));")
 mydb.commit()
 #execute to use the database 
+
+#declare a global variable which will store the username when the user log in
 global userID
 userID = ""
-loggedIn = False
 
+#declear the App class which will work as the "backend" to initiate all the objects and switch the frame
 class app(tk.Tk):
-    
+  
+    #init
     def __init__(self, *args, **kwargs):
-    
-        tk.Tk.__init__(self, *args, **kwargs)  
+      
+      #initiate tkinter
+        tk.Tk.__init__(self, *args, **kwargs)
+        
+        #initiate a container frame  
         container = ttk.Frame(self, relief="sunken")  
+        #pack to display on the screen
         container.pack(fill="both", expand = True)  
+        #set up a tuple for the frames
         self.frames = {}  
+        #configure the grid manager for the container
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
+        #initiate a loop which will initiate all the frames
         for F in (menu, logIn, signUpMenu, importCSVPage, mainMenu, searchMenu, deleteExplanationMenu, alterationExplanation,finalAlterationRecord, alterationRecord, deletionRecord, alterationRecord, additionRecord, toolMenu):  
-  
+            
             frame = F(container, self)  
-  
+
             self.frames[F] = frame  
   
             frame.grid(row=0, column=0, sticky="nsew")  
-  
+        #show the menu frame
         self.show_frame(menu)  
-  
+    # define the show_frame function which will raise and display whatever frame is passed in on top of the frame stack (basically what the user sees)
     def show_frame(self, cont):  
   
         frame = self.frames[cont]  
         frame.tkraise()  
         
-
+# define the menu class (which will be the login / sign up page)
 class menu(ttk.Frame):
-    
+    #init
     def __init__(self, parent, controller):
-        
+        #initiate the frame
         ttk.Frame.__init__(self,parent,)
+        #set the theme
         sv_ttk.set_theme("dark")
+        #initiate a style object 
         style = ttk.Style()
+        #configure the style of the button
         style.configure("TButton", width= 20,font=(None, 20))
+        #create and display a label for the user to see
         label = ttk.Label(self, text="Welcome to the CSV Navi!", font=("Helvetica", 40))
         label.pack(expand=True, pady=100)
-        
+        #create two buttons which redirects them to the relative page and display them
         button = ttk.Button(self, text="Log In", command=lambda: controller.show_frame(logIn))
         button.pack(side="left",expand=True,ipadx= 100, ipady=100)
         
         button2 = ttk.Button(self, text="Sign Up", command=lambda: controller.show_frame(signUpMenu),)
         button2.pack(side="left", pady=150,expand=True, ipadx= 100, ipady=100)
-        
+        #Create a quit program button and display it
         backwardButton = ttk.Button(self, text="Quit", command=lambda: sys.exit())
         backwardButton.place(relx=0.05, rely=0.05)
         
-        
+#create a class which will be the template for the login and sign up page
 class frontPageTemplate(ttk.Frame):
-    
+    #init
     def __init__(self, parent, controller):
         
-        
+        #initiate the frame
         ttk.Frame.__init__(self, parent)
-        
+        #set the label relative to the function
         self.createLabel()
-        
+        #initiate the username and password variables
         self.inputtedUsername = tk.StringVar()
         self.inputtedPassword = tk.StringVar()
-        
+        #trace them to check if the user has inputted anything
         self.inputtedUsername.trace_add('write', self.statusButton)
         self.inputtedPassword.trace_add('write', self.statusButton)
-        
+        #create the labels and entry boxes for the username and password
         self.label1 = ttk.Label(self, text="Username:", font=("none, 26"))
         self.label2 = ttk.Label(self, text="Password:", font=("none, 26"))
         
         self.usernameEntry = ttk.Entry(self, textvariable=self.inputtedUsername, font=("none, 24"))
         self.passwordEntry = ttk.Entry(self, textvariable=self.inputtedPassword, font=("none, 24"), show="*")
-        
+        #pack them to display on the screen
         self.label1.pack(side="top", expand=True, pady=10)
         self.usernameEntry.pack(side="top", expand=True, pady=10)
         
         self.label2.pack(side="top", expand=True, pady=10)
         self.passwordEntry.pack(side="top", expand=True, pady=10)
+        
+        #the explanation text for the user (only for sign up)
         self.explanationText()
+        
+        #create the buttons for the user to go back and display it on the screen
         self.backwardButton = ttk.Button(self, text="Go Back", command=lambda: [self.clear_text(), controller.show_frame(menu)])
         self.backwardButton.place(relx=0.05, rely=0.05)
         
+        #create the submit button and display it on the screen
         self.submitButton = ttk.Button(self, text="Submit", state='disabled', command=lambda: [self.submit(), self.clear_text()])
         self.submitButton.pack(side="top", pady= 50,expand=True, ipadx= 60, ipady=50)
+        
+        #create a style object and configure the button style
         self.style = ttk.Style(self)
         self.style.configure('TButton', width=15)
         
+    #define the statusButton function which will check if the user has inputted anything    
     def statusButton(self,*args):
-    
+      
       if(len(self.inputtedUsername.get()) ) > 0 and len(self.inputtedPassword.get()) > 0:
         self.submitButton.configure(state='normal')
       else:
         self.submitButton.configure(state='disabled')
         
+    #define the clear_text function which will clear the entry boxes    
     def clear_text(self):
       
       self.usernameEntry.delete(0, 'end')
       self.passwordEntry.delete(0,'end')
       
-      
+    #define the createLabel function which will create the label for the page, these methods will be used in the child class  
     def createLabel(self):
               
       pass
     
+    #define the explanationText function which will create the explanation text for the page
     def explanationText(self):
       
       pass
     
+    #define the submit function which will be used in the child class 
     def submit(self):
       
       pass
     
-    
+#create the sign up menu class which will inherit from the frontPageTemplate class   
 class signUpMenu(frontPageTemplate):
-    
+    #init
     def __init__(self, parent, controller):
+      #initiate everything in the parent class
       super().__init__(parent, controller)
       
-      
+    #override parent method  
     def createLabel(self):
       
+      #create the label for the page and display it on the screen
       self.label = ttk.Label(self, text="Sign Up / Create user", font=("Helvetica", 40))
       self.label.pack(expand=True, pady=100)
-      
+    
+    #override parent method  
     def explanationText(self):
       
+      #create the explanation text for the user and display it on the screen
       self.explanationLabel = ttk.Label(self, text="1. Username can only contain english\n    and numeric characters\n    Also not case-sensitve.\n2. Password must contain english characters, \n    numeric characters and special characters.", font=("none, 14"))
       self.explanationLabel.pack(side="top", expand=True, pady=10)
-      
+    
+    #override parent method  
     def submit(self):
       
+      #get the values of the tkinter variables declared in the parent class
       username = self.usernameEntry.get()
       password = self.passwordEntry.get()
 
+      #check if the username is alphanumeric
       if username.isalnum() == False:
+        #if not, display an error message
         messagebox.showerror("Error", "Username can only contain english and numeric characters.")
         return
-        
+      
+      #check if the username is already taken  
       sql = f"SELECT username FROM usercredentials WHERE username = '{username}'" 
+      #execute the sql statement
       mycursor.execute(sql)
+      #fetch the data
       data = mycursor.fetchall()
       
+      #if the data is not empty, display an error message
       if data:
+        
         messagebox.showerror("Error", "Username has been taken, oops :D")
         return
-      else:
-        pass
       
+      #set up three boolean variable that needs to be true for the password to be valid
       isEnglish = False
       isNumeric = False
       isSpecial = False
       
+      #loop through the characters in the password
       for i in range(len(password)):
         
+        #if the password contains alphabetical character
         if password[i].isalpha() == True:
+          #set the boolean to true
           isEnglish = True
           continue
         
+        #if the password contains numeric character
         if password[i].isdigit() == True:
+          #set the boolean to true
           isNumeric = True
           continue
         
+        #if the password contains special character
         if regex.search(password[i]) != None:
+          #set the boolean to true
           isSpecial = True
           continue
         
+        #if the password contains any other character that is not english, numeric or special character display an error message
         else:
+          #display an error message
           messagebox.showerror("Error", "What character did you input???")
           return
         
+      #if no english character is present in the password  
       if isEnglish == False:
+        
+        #display an error message
         messagebox.showerror("Error", "Please have english characters in your password")
         return
       
+      #if no numeric character is present in the password
       if isNumeric == False:
+        
+        #display an error message
         messagebox.showerror("Error", "Please include numbers in your password")
         return
       
+      #if no special character is present in the password
       if isSpecial == False:
+        
+        #display an error message
         messagebox.showerror("Error", "Please include special characters in your password.")
         return
       
+      #encode the password to bytes in utf-8
       byteRepPassword = password.encode(encoding="utf-8")
+      #create a sha256 object
       sha256 = hashlib.sha256()
+      #update the object with the byte representation of the password
       sha256.update(byteRepPassword)
+      #get the hexdigest of the password
       hashedPassword = sha256.hexdigest()
       
+      #create the sql statement to insert the username and password into the database
       sql = f"INSERT INTO usercredentials VALUES('{username}','{hashedPassword}');"
       
       try:
+        #execute the sql statement, commit the change and display a success message
         mycursor.execute(sql)
         mydb.commit()
         messagebox.showinfo("Success!", ":D You created an user!!")
         return
+      
       except:
+        
+        #if an error occurs, display an error message
         messagebox.showerror("Error", "Something happened while trying to create user, try again later or use different username and password.")
         return
 
-
+#create the log in class which will inherit from the frontPageTemplate class
 class logIn(frontPageTemplate):
   
-    
+    #init
     def __init__(self, parent, controller):
+      #initiate everything in the parent class
       super().__init__(parent, controller)
+      #declare the controller object
       self.controller = controller
     
+    #override the parent method    
     def createLabel(self):
       
+      #create and display the label for the page
       self.label = ttk.Label(self, text="Log In", font=("Helvetica", 40))
       self.label.pack(expand=True, pady=100)
     
+    #override the parent method
     def submit(self):
+      
+      #get the values of the tkinter variables declared in the parent class
       username = self.usernameEntry.get()
       password = self.passwordEntry.get()
-
+      
+      #check if the username is alphanumeric
       if username.isalnum() == False:
+        
+        #if not, display an error message
         messagebox.showerror("Error", "Username can only contain english and numeric characters.")
         return
       
+      #encode the password to bytes in utf-8
       byteRepPassword = password.encode(encoding="utf-8")
+      #create a sha256 object
       sha256 = hashlib.sha256()
+      #update the object with the byte representation of the password
       sha256.update(byteRepPassword)
+      #get the hexdigest of the password
       hashedPassword = sha256.hexdigest()
       
+      #create the sql statement to select the username and password from the database where the username and password matches the inputted username and password
       sql = f"SELECT * FROM usercredentials WHERE username = '{username}' AND password = '{hashedPassword}'"
+      #execute the sql statement and fetch the data
       mycursor.execute(sql)
       data = mycursor.fetchall()
       
+      #if the data is not empty, display a success message and redirect the user to the importCSVPage
       if data:
         
         messagebox.showinfo("Success!", "You are logged on!!")
         global userID
         userID = username.lower()
-        loggedIn = True
         self.controller.show_frame(importCSVPage)
-        
-      else:
-        messagebox.showerror("Error!", "Username or password is incorrect")
       
-      return
-    
-    
-    
-    
+      #if the data is empty, display an error message
+      else:
+        
+        messagebox.showerror("Error!", "Username or password is incorrect")
+        return
+       
+#create the class which displays the page for the user to import the CSV file   
 class importCSVPage(ttk.Frame):
   
+  #init
   def __init__(self, parent, controller):
     
+    #initiate the frame
     ttk.Frame.__init__(self, parent)
+    #set the controller object
     self.controller = controller
+    #create a style object and change the style of the button
     style = ttk.Style()
     style.configure("TButton", width= 20,font=(None, 20))
     
+    #create the back and import button and display them on the screen
     self.backButton = ttk.Button(self, text="Back to main menu", command=lambda: self.backFunction())
     self.backButton.pack(side="left", pady=150,expand=True, ipadx= 100, ipady=100)
     self.importingButton = ttk.Button(self, text="Import CSV", command=lambda: self.importCSV())
     self.importingButton.pack(side="left", pady=150,expand=True, ipadx= 100, ipady=100)
+    
+    #create the explanation label and display it on the screen
     self.explanationLabel = ttk.Label(self, text="The CSV file's first row must contain the words below in\nthe exact character(case sensitive):\n- firstName\n- secondName\n- phoneNumber\n- gender\n- email", font=("none, 14"))
     self.explanationLabel.place(relx=0.35, rely=0.75)
     
-    
+  #define the backFunction which will redirect the user to the login/signup menu
   def backFunction(self):
     
-    loggedIn = False
     self.controller.show_frame(menu)
-    
+  
+  #define the importCSV function which will import the CSV file into the database
   def importCSV(self):
     
-    
+    #create a list of the required columns
     requirementColumn = ['firstName', 'secondName', 'phoneNumber', 'gender', 'email']
     
+    #create a sub interface for the user to select the CSV file
     file = filedialog.askopenfilename(title="CSV File", initialdir='/', filetypes=[("CSV Files", "*.csv")])
+     
+    #global the columnName variable
     global columnName
+    #read the first row of the CSV file and store it in columnName
     columnName = pd.read_csv(file, nrows=1).columns.to_list()    
 
+    #check if the first row of the CSV file contains the required columns
     if len(columnName) == 5:
       
       for i in range(5):
         
         for j in range(5):
-          
+          #change this stupid code+
           if requirementColumn[i] == columnName[j]:
             break
           elif j < 4:
@@ -319,40 +413,53 @@ class importCSVPage(ttk.Frame):
       messagebox.showerror("Error", "The CSV file is in the wrong format.")
       return 
     
+    #initiate a dataframe which reads all the CSV data
     df = pd.read_csv(file, header=0, dtype={0:'string', 1:'string', 2:'string', 3:'string', 4:'string', 5:'string'})
+    #delete the user specific table if it exists
     deleteSQL = f"DROP TABLE IF EXISTS `{userID}`;"
     mycursor.execute(deleteSQL)
     mydb.commit()
+    #recreate the user specific table
     createTableSQL = f"CREATE TABLE IF NOT EXISTS `{userID}` ({columnName[0]} varchar(255), {columnName[1]} varchar(255), {columnName[2]} varchar(255), {columnName[3]} varchar(255), {columnName[4]} varchar(255) );"
     mycursor.execute(createTableSQL)
     mydb.commit()
+    #drop the first row (which should contain the header)
     df.drop(index=0)
+    #print a log
     print("System log: table created for", userID)
+    #load the dataframe to the SQA
     df.to_sql(userID, schema="COURSEWORK", con=connection, if_exists='append', index=False, chunksize=10000)
-    
+    #display success message
     messagebox.showinfo("Success!!!", "You have successfully imported a CSV file :D")
+    #show the main menu
     self.controller.show_frame(mainMenu)
     
     
-    
+#create the main menu class which will inherit from the importCSVPage class
 class mainMenu(importCSVPage):
   
-    
+  #init  
   def __init__(self, parent, controller):
     
-    
+    #initiate the frame
     ttk.Frame.__init__(self, parent)
+    #set the controller object
     self.controller = controller
+    #create a style object and configure the button style
     style = ttk.Style()
     style.configure("TButton", width= 15,font=(None, 20))
 
+    #create the welcome label and display it on the screen
     self.welcomeLabel = ttk.Label(self, text=f"Welcome", font=("Helvetica", 40))
     self.welcomeLabel.place(relx=0.435, rely=0.1)
-        
+    
+    #create the log out button and display it on the screen    
     self.backwardButton = ttk.Button(self, text="Log Out", command=lambda: [self.clearTreeData(self.tree), controller.show_frame(menu)])
     self.backwardButton.place(relx=0.05, rely=0.05)
     
+    #create the treeview object and display it on the screen
     self.tree = ttk.Treeview(self, column=("First name", "Surname", "Gender", "Email", "Phone Number"), show='headings')
+    #configure the tree's columns and headings
     self.tree.column("#1", anchor="w")
     self.tree.heading('#1', text="First Name") 
     
@@ -370,6 +477,7 @@ class mainMenu(importCSVPage):
     
     self.tree.pack(expand=True)
     
+    #create the refresh data, import new data, tools and export button and display them on the screen
     self.refreshDataButton = ttk.Button(self, text="Refresh Data", command=lambda: self.refreshData(self.tree))
     self.loadNewData = ttk.Button(self, text="Import New Data", command=lambda: [importCSVPage.importCSV(self),self.refreshData(self.tree)])
     self.toolButton = ttk.Button(self, text="Tools", command=lambda: controller.show_frame(toolMenu))
@@ -517,19 +625,12 @@ class bluePrint(mainMenu):
                       
     self.tree.column("#5", anchor="w")
     self.tree.heading('#5', text="Phone Number") 
-    
-    self.button(controller)  
+  
   
   def showResultMenu(self):
     
     self.tree.pack(expand=True)
 
-    
-    
-  def button(self, controller):
-    
-    pass
-    
     
   def action(self):
     
