@@ -398,14 +398,15 @@ class importCSVPage(ttk.Frame):
     #check if the first row of the CSV file contains the required columns
     if len(columnName) == 5:
       
-      for i in range(5):
-        
-        for j in range(5):
-          #change this stupid code+
-          if requirementColumn[i] == columnName[j]:
-            break
-          elif j < 4:
+      while len(requirementColumn) > 0:
+      
+        for i in range(len(columnName)):
+          
+          if columnName[i] in requirementColumn:
+            
+            requirementColumn.remove(columnName[i])
             continue
+          
           else:
             messagebox.showerror("Error", "The CSV file is in the wrong format.")
             return
@@ -488,103 +489,124 @@ class mainMenu(importCSVPage):
     self.toolButton.place(relx=0.4257, rely= 0.93)
     self.exportButton.place(relx=0.4257, rely= 0.72)
 
-    
+  #define the exportCSV function which will export the data in the table to a CSV file  
   def exportCSV(self):
     
+    #create a file dialog for the user to select the location of the CSV file
     file = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV Files", "*.csv")])
+    #create a sql statement to get the column name of the table
     columnSQL = f"Show columns from {userID};"
     mycursor.execute(columnSQL)
     columns = mycursor.fetchall()
+    #store the column names in a list
     columns = [column[0] for column in columns]
+    #create a sql statement to fetch all of the data from the table
     sql = f"SELECT * FROM {userID}"
     mycursor.execute(sql)
     rows = mycursor.fetchall()
+    #create a dataframe with the data and column names
     df = pd.DataFrame(rows, columns=columns)
+    #export the dataframe to a CSV file and display a success message
     df.to_csv(file, index=False)
     messagebox.showinfo("Success", "You have exported the CSV file")
     
     
-    
+  #define the clearTreeData function which will clear the data in the treeview object 
   def clearTreeData(self, tree):
     for item in tree.get_children():
       tree.delete(item)
-      
+  
+  #define the refreshData function which will refresh the data in the treeview object    
   def refreshData(self, tree):
     
+    #clear the data in the treeview object
     self.clearTreeData(tree)
+    #create a sql statement to fetch all of the data from the table
     sql = f"SELECT firstName, secondName, gender, email, phoneNumber FROM `{userID}` LIMIT 100;"
     mycursor.execute(sql)
     rows = mycursor.fetchall()
+    #sort the datas in the rows into alphabetical order using bubble sort
     rows = self.bubble_sort(rows)
+    #insert the data into the treeview object
     for row in rows:
       tree.insert("", tk.END, values=row)
       
       
-  
+  #define the bubble_sort function which will sort the data in the rows into alphabetical order
   def bubble_sort(self, rows):
     
+    #get the length of the rows
     length = len(rows)
-    
+    #loop through the rows
     for i in range(length):
-      
+      #set swapped to false
       swapped = False
-      
+      #loop through the rows again
       for j in range(0, length-i-1):
-        
+        #if the first character of the first name is greater than the first character of the second name
         if ord(rows[j][0][0]) > ord(rows[j+1][0][0]):
-          
+          #swap the rows
           rows[j], rows[j+1] = rows[j+1], rows[j]
           swapped = True
-        
+      #if swapped is false, break the loop  
       if not swapped:
+        
         break
+    #return the sorted rows  
     return rows
 
-
+#create the class which will display a menu with all the tools to manipulatte the CSV file. This class will inherit from the mainMenu class
 class toolMenu(mainMenu):
   
+  #init
   def __init__(self, parent, controller):
     
+    #initiate the frame
     ttk.Frame.__init__(self, parent)
+    #set the controller object
     self.controller = controller
     
+    #create the buttons for the user to go back, delete record, alter record, add new record and search records
     self.backButton = ttk.Button(self, text="Back", command=lambda: controller.show_frame(mainMenu))
     self.deleteButton = ttk.Button(self, text="Delete Record", command=lambda: controller.show_frame(deleteExplanationMenu))
     self.alterButton = ttk.Button(self, text="Alter Record", command=lambda: controller.show_frame(alterationExplanation))
     self.addNewButton = ttk.Button(self, text="Add New Record", command=lambda: controller.show_frame(additionRecord))
     self.searchMenuButton = ttk.Button(self, text="Search", command=lambda: controller.show_frame(searchMenu))
     
+    #display all the buttons created above on the screen
     self.backButton.place(relx=0.05, rely=0.05)
     self.deleteButton.place(relx=0.235, rely=0.3, height = 250, width= 400)
     self.alterButton.place(relx=0.235, rely= 0.6, height = 250, width= 400)
     self.addNewButton.place(relx=0.535, rely= 0.3, height = 250, width= 400)
     self.searchMenuButton.place(relx=0.535, rely=0.6, height = 250, width= 400)
     
-    
+#create the class for which contains the methods, general displays for all the tools (Alteration, Deletion, Addition, Search)    
 class bluePrint(mainMenu):
   
-  
+  #init
   def __init__(self, parent, controller):
     
+    #initiate the frame
     ttk.Frame.__init__(self, parent)
-    
+    #set the controller object
     self.controller = controller
-    
+    #create the variables for the user inputs
     self.firstName = tk.StringVar()
     self.secondName = tk.StringVar()
     self.phoneNum = tk.StringVar()
     self.gender = tk.StringVar()
     self.email = tk.StringVar()
-    
+    #trace the variables to check if the user has inputted anything
     self.firstName.trace_add("write", self.statusButton)
     self.secondName.trace_add("write", self.statusButton)
     self.phoneNum.trace_add("write", self.statusButton)
     self.gender.trace_add("write", self.statusButton)
     self.email.trace_add("write", self.statusButton)
     
-    
+  #define the function for the user inputs  
   def userInputs(self, controller):
     
+    #create the labels and entry boxes for the user inputs
     self.fNameLabel = ttk.Label(self, text="First Name:", font=("none, 26"))
     self.sNameLabel = ttk.Label(self, text="Second Name:", font=("none, 26"))
     self.phoneLabel = ttk.Label(self, text="Phone Number:", font=("none, 26"))
@@ -598,19 +620,23 @@ class bluePrint(mainMenu):
     self.phoneEntryBox = ttk.Entry(self, textvariable=self.phoneNum, font=("none, 24"))
     self.genderEntryBox = ttk.Entry(self, textvariable=self.gender, font=("none, 24"))
     self.emailEntryBox = ttk.Entry(self, textvariable=self.email, font=("none, 24"))
-
+    #create the submit button
     self.actionButton = ttk.Button(self, text="Submit", state='disabled', command=lambda: [self.action()])
-    
+    #create the go back button and display it
     self.backwardButton = ttk.Button(self, text="Go Back", command=lambda: self.backButtonFunction())
     self.backwardButton.place(relx=0.05, rely=0.05)
     
-    
-    
+    #note: in this function none of the widgets are packed, they will be packed in the child class. The only exception is the backwards button.
+  
+  #create a function for the result menu, which is the general display menu for the aftermaths of the usages of the tools
   def resultMenu(self, controller):
     
+    #create the result label and display it on the screen
     self.resultLable()
     
+    #create the treeview object and display it on the screen
     self.tree = ttk.Treeview(self, column=("First name", "Surname", "Gender", "Email", "Phone Number"), show='headings')
+    #configure the tree's columns and headings
     self.tree.column("#1", anchor="w")
     self.tree.heading('#1', text="First Name") 
     
@@ -626,17 +652,17 @@ class bluePrint(mainMenu):
     self.tree.column("#5", anchor="w")
     self.tree.heading('#5', text="Phone Number") 
   
-  
+  #create the function to show the result menu
   def showResultMenu(self):
     
     self.tree.pack(expand=True)
 
-    
+  #create the action function which will be overrided in the child class to tailor to the specific need of the class
   def action(self):
     
     pass
 
-
+  #create the function to monitor the entry boxes and check if anything has been inputted.
   def statusButton(self, *args):
     
     if(len(self.firstName.get()) ) > 0 or len(self.secondName.get()) > 0 or len(self.phoneNum.get()) > 0 or len(self.email.get()) > 0 or len(self.gender.get()) > 0:
@@ -646,7 +672,7 @@ class bluePrint(mainMenu):
     else:
       self.actionButton.configure(state='disabled')
       
-      
+  #create the function to clear all the texts on the entry box
   def clear_text(self):
     
     self.fNameEntryBox.delete(0, 'end')
@@ -655,9 +681,10 @@ class bluePrint(mainMenu):
     self.genderEntryBox.delete(0,'end')
     self.emailEntryBox.delete(0,'end')
 
-
+  #create the function to show the user inputs
   def showSearchMenu(self):
     
+    #display all the label and entry box onto the screen
     self.fNameLabel.pack(side= "top", expand=True, pady=(25, 10))
     self.fNameEntryBox.pack(side= "top", expand=True)
     
@@ -675,7 +702,7 @@ class bluePrint(mainMenu):
     self.emailEntryBox.pack(side= "top", expand=True)
     
     self.actionButton.pack(side="top", pady= 50,expand=True, ipadx= 60, ipady=50)
-    
+    #create a style objects that styles the button
     self.style = ttk.Style(self)
     self.style.configure('TButton', width=15)
 
