@@ -398,18 +398,27 @@ class importCSVPage(ttk.Frame):
     #check if the first row of the CSV file contains the required columns
     if len(columnName) == 5:
       
+      #While there is still columns in the requirementColumn list
       while len(requirementColumn) > 0:
-      
+        
+        #loop through the columnName list
         for i in range(len(columnName)):
           
+          #if the column name is in the requirementColumn list
           if columnName[i] in requirementColumn:
             
+            #remove the column name from the requirementColumn list
             requirementColumn.remove(columnName[i])
             continue
           
+          #if the column name is not in the requirementColumn list
           else:
+            
+            #display an error message
             messagebox.showerror("Error", "The CSV file is in the wrong format.")
             return
+    
+    #if the first row of the CSV file does not contain the required columns amount
     else:
       messagebox.showerror("Error", "The CSV file is in the wrong format.")
       return 
@@ -707,9 +716,10 @@ class bluePrint(mainMenu):
     self.style.configure('TButton', width=15)
 
 
-
+  #create the function to hide the user input boxes
   def hideSearchMenu(self):
     
+    #hide all the label, entry box and button by using pack_forget
     self.fNameLabel.pack_forget()
     self.sNameLabel.pack_forget()
     self.phoneLabel.pack_forget()
@@ -726,164 +736,216 @@ class bluePrint(mainMenu):
     
     self.actionButton.pack_forget()
 
-
+  #Function for creating the conditions for SQL statements
   def dynamicSQL(self, firstName, secondName, phoneNumber, gender, email, sql):
       
+      #create a list of conditions and parameters
       conditions = []
       parms = []
       
+      '''
+      This is done through a series of if statements
+      if the user has inputted anything into the entry box, 
+      the condition will be added to the conditions list and the parameter will be added to the parms list.
+      
+      There are some with additional checks, such as the phone numbers and email.
+      '''
+      
       if firstName:
+        
         conditions.append("firstname = %s")
         parms.append(firstName)
-      
       
       if secondName:
         
         conditions.append("secondName = %s")
         parms.append(secondName)
-      
-      
+    
       if phoneNumber:
         
         try:
           
+          #parse the phone number
           num = phonenumbers.parse(phoneNumber)
+          #check if the numbers is a possible phone number
           if phonenumbers.is_possible_number(num) == True:
-            
+            #if its true then append the condition and parameter to the lists
             conditions.append("phoneNumber = %s")
             parms.append(phoneNumber)
-        
+          #Send error message if the number is not possible
           else:
-            messagebox.showerror("Error", "This doesn't seem like a correct phone number")
+            messagebox.showerror("Error", "This doesn't seem like a correct phone number, please remember to add the country code.")
             return 1
-          
+        #if there was a few things wrong with adding the phone number, send an error message
         except:
-          messagebox.showerror("Error", "This doesn't seem like a correct phone number, please remember to type the country code.")
+          messagebox.showerror("Error", "There seems to be something wrong while adding the phone number")
           return 1
           
       
       if gender:
-        
+        #if the gender is not in the list of the requirements, send an error message
         if gender not in ["Non-binary" ,"Male", "Female"]:
           
           messagebox.showerror("Error", "This doesn't seem like a correct gender, its only Non-binary, Male or Female")
           return 1
         
         else:
-          
+          #append the conditions and parms into the relative list
           conditions.append("gender = %s")
           parms.append(gender)
           
       if email:
-        
+        #if the email is in the correct format, append the conditions and parms into the relative list
         if ".com" in email and "@" in email:
           
           conditions.append("email = %s")
           parms.append(email)
-
+        #if the email is not in the correct format, send an error message
         else:
           
           messagebox.showerror("Error", "This doesn't seem like a correct email")
           
-      
+      #Join the conditions list with "AND" and add it to the sql statement
       sql += " WHERE " + " AND ".join(conditions)
 
+      #return the statement and the parameters
       return sql, parms
   
-
+#creates the class to display the search menu for a record
 class searchMenu(bluePrint):
   
   def __init__(self, parent, controller):
-    
+    #initiate everything in the parent class
     super().__init__(parent, controller)
-    
-    
+    #create the input boxes
     bluePrint.userInputs(self, controller)
-    
+    #show the input boxes
     bluePrint.showSearchMenu(self)
-    
+    #create the result menu note: the result menu isn't shown 
     bluePrint.resultMenu(self, controller)
     
-  
+  #define the result lable function
   def resultLable(self):
     
     self.result = ttk.Label(self, text="Result record", font=(None, 30))
     self.result.place(relx=0.435, rely = 0.1)
 
-    
+  #define the action function
   def action(self):
-      
+     
+    #get the values of the user inputs 
     firstName = self.firstName.get()
     secondName = self.secondName.get()
     phoneNumber = self.phoneNum.get()
     email = self.email.get()
     gender = self.gender.get()
     
+    #clear the text in the entry boxes
     bluePrint.clear_text(self)
+    #run the search function which returns a list of rows of data
     rows = self.searchFunction(firstName, secondName, phoneNumber, gender, email)
     
+    #If there is data in the rows
     if rows:
       
-      
+      #for every data in the treeview object, delete it
       for item in self.tree.get_children():
         self.tree.delete(item)
       
+      #hide the search menu
       bluePrint.hideSearchMenu(self)
+      #show the result menu and label
       self.resultLable.place(relx=0.435, rely = 0.1)
       bluePrint.showResultMenu(self)
       
+      #print the rows for logs
       print(rows)
+      #for every row in the list, insert them into the treeview.
       for row in rows:
         self.tree.insert("", tk.END, values=row)
         
-        
+    #If there is no data in the rows
     else:
-      
+      #send an error message
       messagebox.showinfo("Hmm", "It seems that there is nothing...")
       return 1
     
-    
-    
-    
+  #define the result label function  
   def resultLable(self):
     
+    #create a result label for the user to see, this is not displayed yet.
     self.resultLable = ttk.Label(self, text="Result record", font=(None, 30))
 
-    
+  #define the search function    
   def searchFunction(self, firstName, secondName, phoneNumber, gender, email):
     
+    '''
+    This code works as the following:
+    1. First create a statement to select all the data from the user specific table,
+    2. Then use the dynamic SQL statement to get the conditions added onto the current SQL statement and the relative parameters
+    3. Finally executes it and fetches the data.
+    '''
+    #1.
     sql = f"SELECT * FROM {userID}"
+    #2.
     sql, parms = bluePrint.dynamicSQL(self,firstName, secondName, phoneNumber, gender, email, sql)
+    #this was for log purposes
     print(sql, parms)
+    #3.
     mycursor.execute(sql, parms)
     rows = mycursor.fetchall()
-    
+    #returns the data
     return rows
   
-  
+  #define the back button function
   def backButtonFunction(self):
     
+    '''
+    Note: As said before, each frame was already loaded in and just stacked on top of each other.
+          So this means that I had to hide the result menu and load up the search menu again.
+          Then put raise the menu to the top of the stack. 
+          A bit like a theater, preparing the scene the user would see when they clicked into the search screen again.
+    '''
+    #clear the text in the entry boxes
     bluePrint.clear_text(self)
+    #hide the treeview
     self.tree.pack_forget()
+    #hide the result label
     self.resultLable.place_forget()
+    #show the search menu
     bluePrint.showSearchMenu(self)
+    #show the main menu
     self.controller.show_frame(mainMenu)
 
 
 class deletionRecord(searchMenu):
   
+  #Init
   def __init__(self, parent, controller):
     
+    #Initiate everything in the parent class
     super().__init__(parent, controller)
     
-    
+  #define the back button function  
   def backButtonFunction(self):
     
+    '''
+    Note: As said before, each frame was already loaded in and just stacked on top of each other.
+          So this means that I had to hide the result menu and load up the search menu again.
+          Then put raise the menu to the top of the stack. 
+          A bit like a theater, preparing the scene the user would see when they clicked into the search screen again.
+    '''
+    #clear the text in the entry boxes
     bluePrint.clear_text(self)
+    #hide the treeview
     self.tree.pack_forget()
+    #hide the result label
     self.resultLable.place_forget()
+    #show the search menu
     bluePrint.showSearchMenu(self)
+    #show the explanation menu for deleting
     self.controller.show_frame(deleteExplanationMenu)
+
   
   
   def action(self):
