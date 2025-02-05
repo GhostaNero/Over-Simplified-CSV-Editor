@@ -55,23 +55,23 @@ class app(tk.Tk):
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
         #initiate a loop which will initiate all the frames
-        for F in (menu, logIn, signUpMenu, importCSVPage, mainMenu, searchMenu, deleteExplanationMenu, alterationExplanation,finalAlterationRecord, alterationRecord, deletionRecord, alterationRecord, additionRecord, toolMenu):  
+        for F in (startUpMenu, logIn, signUpMenu, importCSVPage, mainMenu, searchMenu, deleteExplanationMenu, alterationExplanation,finalAlterationRecord, alterationRecord, deletionRecord, alterationRecord, additionRecord, toolMenu):  
             
             frame = F(container, self)  
 
             self.frames[F] = frame  
   
             frame.grid(row=0, column=0, sticky="nsew")  
-        #show the menu frame
-        self.show_frame(menu)  
+        #show the start up menu frame
+        self.show_frame(startUpMenu)  
     # define the show_frame function which will raise and display whatever frame is passed in on top of the frame stack (basically what the user sees)
     def show_frame(self, cont):  
   
         frame = self.frames[cont]  
         frame.tkraise()  
         
-# define the menu class (which will be the login / sign up page)
-class menu(ttk.Frame):
+# define the startUpMenu class (which will be the login / sign up page)
+class startUpMenu(ttk.Frame):
     #init
     def __init__(self, parent, controller):
         #initiate the frame
@@ -127,7 +127,7 @@ class frontPageTemplate(ttk.Frame):
         self.explanationText()
         
         #create the buttons for the user to go back and display it on the screen
-        self.backwardButton = ttk.Button(self, text="Go Back", command=lambda: [self.clear_text(), controller.show_frame(menu)])
+        self.backwardButton = ttk.Button(self, text="Go Back", command=lambda: [self.clear_text(), controller.show_frame(startUpMenu)])
         self.backwardButton.place(relx=0.05, rely=0.05)
         
         #create the submit button and display it on the screen
@@ -379,7 +379,7 @@ class importCSVPage(ttk.Frame):
   #define the backFunction which will redirect the user to the login/signup menu
   def backFunction(self):
     
-    self.controller.show_frame(menu)
+    self.controller.show_frame(startUpMenu)
   
   #define the importCSV function which will import the CSV file into the database
   def importCSV(self):
@@ -464,7 +464,7 @@ class mainMenu(importCSVPage):
     self.welcomeLabel.place(relx=0.435, rely=0.1)
     
     #create the log out button and display it on the screen    
-    self.backwardButton = ttk.Button(self, text="Log Out", command=lambda: [self.clearTreeData(self.tree), controller.show_frame(menu)])
+    self.backwardButton = ttk.Button(self, text="Log Out", command=lambda: [self.clearTreeData(self.tree), controller.show_frame(startUpMenu)])
     self.backwardButton.place(relx=0.05, rely=0.05)
     
     #create the treeview object and display it on the screen
@@ -915,7 +915,7 @@ class searchMenu(bluePrint):
     #show the search menu
     bluePrint.showSearchMenu(self)
     #show the main menu
-    self.controller.show_frame(mainMenu)
+    self.controller.show_frame(toolMenu)
 
 
 class deletionRecord(searchMenu):
@@ -945,76 +945,94 @@ class deletionRecord(searchMenu):
     bluePrint.showSearchMenu(self)
     #show the explanation menu for deleting
     self.controller.show_frame(deleteExplanationMenu)
-
-  
-  
+    
+  #create the action function, this overrides the parent method 
   def action(self):
-      
+     
+    #get the values of the user inputs
     firstName = self.firstName.get()
     secondName = self.secondName.get()
     phoneNumber = self.phoneNum.get()
     email = self.email.get()
     gender = self.gender.get()
     
+    #clear the text in the entry boxes
     bluePrint.clear_text(self)
+    #run the search function which returns a list of rows of data
     rows = self.searchFunction(firstName, secondName, phoneNumber, gender, email)
     
+    #If there is data in the rows
     if rows:
       
-      
+      #for every data in the treeview object, delete it
       for item in self.tree.get_children():
         self.tree.delete(item)
       
+      #hide the search menu
       bluePrint.hideSearchMenu(self)
+      #show the result menu and label
       self.resultLable.place(relx=0.435, rely = 0.1)
       bluePrint.showResultMenu(self)
-      
-      self.deleteButton = ttk.Button(self, text="Delete", command=lambda: [self.delete(firstName, secondName, phoneNumber, gender, email), searchMenu.backButtonFunction(self), self.deleteButton.place_forget(), self.showSearchMenu(), self.controller.show_frame(mainMenu)])
+      '''
+      Create and place the delete button onto the screen
+      Note:
+      When this button is clicked, it will delete the records using the delete function,
+      then it will hide the result menu / deletion menu and show the previous frame
+      finally removing the deleteButton from the screen and show the main menu.
+      '''
+      self.deleteButton = ttk.Button(self, text="Delete", command=lambda: [self.delete(firstName, secondName, phoneNumber, gender, email), searchMenu.backButtonFunction(self), self.deleteButton.place_forget(), self.controller.show_frame(mainMenu)])
       self.deleteButton.place(relx=0.435, rely=0.75)
-      
+      #print the rows for log purpose
       print(rows)
+      #insert the data in the rows into the tree
       for row in rows:
         self.tree.insert("", tk.END, values=row)
         
-        
+    #if there is nothing, then display the message to the user    
     else:
       
       messagebox.showinfo("Hmm", "It seems that there is nothing...")
       return 1
-    
+  
+  #define the delete function  
   def delete(self, firstName, secondName, phoneNumber, gender, email):
     
+    #ask the user through a messagebox if they are sure about deleting the data
     choice = messagebox.askokcancel(title="Delete", message="Are you sure you want to delete the record?", icon="warning")
     
+    #If true
     if choice == True:
-      
+      #Create the SQL statement with out the condition
       sql = f"DELETE FROM {userID}"
+      #Get the complete SQL statement with the conditions attached and the parameter for the condition
       sql, parms= bluePrint.dynamicSQL(self, firstName, secondName, phoneNumber, gender, email, sql)
+      #execute and commit
       mycursor.execute(sql, parms)
       mydb.commit()
+      #display success message
       messagebox.showinfo("Success", "You have deleted the record!")
-      return 0
     
-    
-
+#Create the explanation menu for how the process is going to work for deleting data
 class deleteExplanationMenu(bluePrint):
-  
+
   def __init__(self, parent, controller):
     
     ttk.Frame.__init__(self, parent)
     self.controller = controller
     
+    #Create the explanation text and display it onto the screen
     self.explanationLabel = ttk.Label(
         self, 
         text="When you proceed to the next menu you are required to enter credentials first.\nIf there is record present then you are allowed to delete it. \nTo delete the whole CSV file, you can do so by clicking the 'Delete CSV' button.",
         font=("none, 20")
         )
-    
-    
     self.explanationLabel.place(relx=0.20, rely=0.35)
+    
+    #Configure the style of button through the initiated style object
     style = ttk.Style()
     style.configure("TButton", width=20,font=(None, 20))
     
+    #Create the button for going back, deleting specific record and clearing the whole CSV file and displaying them onto the screen.
     self.backwardButton = ttk.Button(self, text="Back", command=lambda: controller.show_frame(mainMenu))
     self.buttonDeLuxDelete = ttk.Button(self, text="Proceed", command=lambda: controller.show_frame(deletionRecord))
     self.deleteCSVButton = ttk.Button(self, text="Delete CSV", command=lambda: self.deleteCSV(controller))
@@ -1023,33 +1041,32 @@ class deleteExplanationMenu(bluePrint):
     self.buttonDeLuxDelete.pack(side="left", anchor="s",expand=True, ipadx= 100, ipady=100, pady=100)
     self.deleteCSVButton.pack(side="left", anchor="s",expand=True, ipadx= 100, ipady=100, pady=100)
     
-    
+  #define the function to delete the whole CSV file  
   def deleteCSV(self, controller):
     
+    #Double check with the user if they want to delete the whole CSV File
     choice = messagebox.askokcancel(title="Delete CSV", message="Are you sure you want to delete the CSV file?", icon="warning")
     
+    #If the choice is True
     if choice == True:
-      
+      #Ask again for a final confirmation
       secondChoice = messagebox.askokcancel(title="Delete CSV", message="Are you very sure?", icon="warning")
-      
+      #If that is also true
       if secondChoice == True:
-        
+        #Create the SQL statement with no condition, execute it and commit it.
         deleteSQL = f"DELETE FROM {userID};"
         mycursor.execute(deleteSQL)
         mydb.commit()
+        #display success message and show the main menu
         messagebox.showinfo("Success", "You have deleted the CSV file")
-        controller.show_frame(toolMenu)
+        controller.show_frame(mainMenu)
         return 0 
-
-      else:
-        
-        pass
-      
-      
+    #if the choice wasn't true then just return them to the main menu.
     messagebox.showinfo("Info", "Returning you to the main menu.")
     controller.show_frame(mainMenu)
     return 0
-
+  
+#define the class for the alter tool  
 class alterationExplanation(bluePrint):
   
   def __init__(self, parent, controller):
@@ -1057,178 +1074,189 @@ class alterationExplanation(bluePrint):
     ttk.Frame.__init__(self, parent)
     self.controller = controller
     
+    #Create and display the explanation text for how the tool is going to work.
     self.explanationLabel = ttk.Label(
         self, 
         text="When you proceed to the next menu you are required to enter credentials first.\nIf there is record present then you are allowed to alter it.\nOtherwise, you can't alter the record.",
         font=("none, 20")
         )
-    
-    
     self.explanationLabel.place(relx=0.20, rely=0.35)
+    #create the style object to configure the style of the buttons
     style = ttk.Style()
     style.configure("TButton", width=20,font=(None, 20))
     
+    #Create the button for going back to the tool menu and proceed. Then display them onto the screen
     self.backwardButton = ttk.Button(self, text="Back", command=lambda: controller.show_frame(toolMenu))
     self.buttonDeLuxAlter = ttk.Button(self, text="Proceed", command=lambda: controller.show_frame(alterationRecord))
-    
     
     self.backwardButton.pack(side="left", anchor="s",expand=True, ipadx= 100, ipady=100, pady=100)
     self.buttonDeLuxAlter.pack(side="left", anchor="s",expand=True, ipadx= 100, ipady=100, pady=100)
 
-
-
+#Create the class for the frame where the user inputs the search criteria
 class alterationRecord(searchMenu):
   
   def __init__(self, parent, controller):
     
+    #Initiate everything in the parent class, which is the search menu. This quite literally mean we are searching a record first
     super().__init__(parent, controller)
-    
+  
+  #Overrides the backButtonFunction which now does everything the same except goes back to the explanation page  
   def backButtonFunction(self):
     
     bluePrint.clear_text(self)
     self.tree.pack_forget()
     self.resultLable.place_forget()
+    self.alterButton.place_forget()
     bluePrint.showSearchMenu(self)
     self.controller.show_frame(alterationExplanation)
-    
+  
+  #Overrides the action button in the parent class  
   def action(self):
     
+    #Gets the values of the user input
     firstName = self.firstName.get()
     secondName = self.secondName.get()
     phoneNumber = self.phoneNum.get()
     email = self.email.get()
     gender = self.email.get()
     
+    #Clear the entry box texts
     bluePrint.clear_text(self)
+    #search for the data and return it
     rows = self.searchFunction(firstName, secondName, phoneNumber, gender, email)
     
+    #If there is data
     if rows:
       
-      
+      #Delete every item in the treeview
       for item in self.tree.get_children():
         self.tree.delete(item)
-      
-      
+      #Hide the search menu, create and place the result label and result menu
       bluePrint.hideSearchMenu(self)
       self.resultLable.place(relx=0.435, rely = 0.1)
       bluePrint.showResultMenu(self)
-      
+      #log purposes
       print(rows)
+      #For every row in the dataset, insert it into the treeview
       for row in rows:
         self.tree.insert("", tk.END, values=row)
-        
+      
+      #Asks the user to double check the records are correct  
       messagebox.showinfo("Info", "Please double check if the record(s) are correct.")
       
+      #Create the alteration button, when pressed will call the SQL function and show the final frame for the alteration
       self.alterButton = ttk.Button(self, text="Alter", command=lambda: [self.sqlFunc(firstName, secondName, phoneNumber, email, gender), self.controller.show_frame(finalAlterationRecord)])
       self.alterButton.place(relx=0.435, rely=0.75)
       
+    #If there is no data, tell the user about it and return.
     else:
       
       messagebox.showinfo("Hmm", "It seems that there is nothing...")
       return 1
-    
+  
+  #Define the SQL function   
   def sqlFunc(self, firstName, secondName, phoneNumber, email, gender):
     
-    
+    #set two global parameter which will be used in the finalAlterationClass
     global updateSQL
     global updateParms
+    '''
+    Note: In the update SQL function, the SQL statement has a WHERE clause,
+          Therefore I have to create a global variable to store the WHERE clause and the parameters for the WHERE clause.
+          So when the user clicks the alter button, the finalAlterationRecord class can use the WHERE clause and the parameters to update the record.
+          To do this I will concatenate the WHERE clause and the parameters to the SQL statement in the finalAlterationRecord class.
+    '''
     updateSQL = ""
     updateSQL, updateParms = bluePrint.dynamicSQL(self, firstName, secondName, phoneNumber, email, gender, updateSQL)
     
-
-    
-    
+  #define result lable  
   def resultLable(self):
     
     self.resultLable = ttk.Label(self, text="Result record(s)", font=(None, 30))
     
-    
+#Create the class for the final frame for altering records
 class finalAlterationRecord(searchMenu):
   
   def __init__(self, parent, controller):
-    
+    #initiate everything in the parent class as usual
     super().__init__(parent, controller)
-    
-  def backButtonFunction(self):
-    
-    bluePrint.clear_text(self)
-    self.tree.pack_forget()
-    self.resultLable.place_forget()
-    bluePrint.showSearchMenu(self)
-    self.controller.show_frame(toolMenu)
-    
+
+  #define the action button which overrides the parent method  
   def action(self):
-    
+    #get all the values of the user inputs
     firstName = self.firstName.get()
     secondName = self.secondName.get()
     phoneNumber = self.phoneNum.get()
     email = self.email.get()
-    gender = self.email.get()
+    gender = self.gender.get()
     
-    
+    #If phone number is inputted
     if phoneNumber:
-        
-      try:
-        
-        num = phonenumbers.parse(phoneNumber)
-        if phonenumbers.is_possible_number(num) == False:
-          
-          messagebox.showerror("Error", "This doesn't seem like a correct phone number")
-          bluePrint.clear_text(self)
-          return 1
-        
-      except:
-        
-        messagebox.showerror("Error", "This doesn't seem like a correct phone number, please remember to type the country code.")
-        bluePrint.clear_text(self)
+      
+      #parse the phone number and check if the number is a possible phone number
+      num = phonenumbers.parse(phoneNumber)
+      if phonenumbers.is_possible_number(num) == False:
+        #if its not possible, send an error message
+        messagebox.showerror("Error", "This doesn't seem like a correct phone number")
+
         return 1
       
-      
+    #If gender is inputted  
     if gender:
         
-      if gender not in ["Non-binary" ,"Male", "Female"]:
-          
+      #check if the gender is in one of the choices  
+      if gender not in ["Non-binary", "Male", "Female"]:
+        #if its not then display an error message  
         messagebox.showerror("Error", "This doesn't seem like a correct gender, its only Non-binary, Male or Female")
-        bluePrint.clear_text(self)
+  
         return 1
     
-    
+    #if the user has inputted email
     if email:
-        
-      if ".com" in email and "@" in email:
-        
-        pass
-
-      else:
-        
+      
+      #check if the email is in the correct format  
+      if ".com" not in email and "@" not in email:
+        #if its not in the correct format then display the error message
         messagebox.showerror("Error", "This doesn't seem like a correct email")
         bluePrint.clear_text(self)
         return 1
       
-      
+    #Ask the user for confirmation
     choice = messagebox.askokcancel(title="Hmmm", message="Confirmation for altering the record", icon="warning")
     
+    #if the choice is true
     if choice == True:  
         
+        #get the final SQL statement and parameter returned from the updateSQL function
         finalUpdateSQL, parms = self.updateSQL(updateSQL, updateParms, firstName, secondName, phoneNumber, email, gender)
+        #log purposes
         print(finalUpdateSQL, parms)
+        #Execute and commit the change
         mycursor.execute(finalUpdateSQL, parms)
         mydb.commit()
+        #show the success message
         messagebox.showinfo("Success", "You have altered the record!")
+        #show the tool menu
         self.controller.show_frame(toolMenu)
         bluePrint.clear_text(self)
         return 0
         
-        
+  #create the updateSQL function      
   def updateSQL(self, sql, parms2, firstName, secondName, phoneNumber, email, gender):
     
+    #Create the first part of the SQL statement
     sql = f"UPDATE {userID}"
+    #create the arrays to store conditions and parameters
     conditions = []
     parms = []
+    '''
+    The nexts section of if statements basically check if there is an input for the variables, 
+    and if there is append the condition and parameter.
+    '''
     if firstName:
       
-        conditions.append("firstname = %s")
-        parms.append(firstName)
+      conditions.append("firstname = %s")
+      parms.append(firstName)
       
       
     if secondName:
@@ -1253,95 +1281,86 @@ class finalAlterationRecord(searchMenu):
         conditions.append("email = %s")
         parms.append(email)
         
+    #create the complete SQL statement and parameter
     sql += " SET " + ", ".join(conditions) + updateSQL
     parms = parms + parms2
+    #return the parameter and SQL statement
     return sql, parms
-    
+ 
+#Define the class for adding records    
 class additionRecord(searchMenu):
   
   def __init__(self, parent, controller):
     
+    #Initiate everything in search menu
     super().__init__(parent, controller)
-    
-  def backButtonFunction(self):
-    
-    bluePrint.clear_text(self)
-    self.tree.pack_forget()
-    self.resultLable.place_forget()
-    bluePrint.showSearchMenu(self)
-    self.controller.show_frame(toolMenu)
-    
+  
+  #overrides the action button  
   def action(self):
     
+    #gets all the values the user inputted
     firstName = self.firstName.get()
     secondName = self.secondName.get()
     phoneNumber = self.phoneNum.get()
     email = self.email.get()
     gender = self.gender.get()
     
-    
+    #if phone number was entered
     if phoneNumber:
-        
-      try:
-        
-        num = phonenumbers.parse(phoneNumber)
-        if phonenumbers.is_possible_number(num) == False:
-          
-          messagebox.showerror("Error", "This doesn't seem like a correct phone number")
-          bluePrint.clear_text(self)
-          return 1
-        
-      except:
-        
-        messagebox.showerror("Error", "This doesn't seem like a correct phone number, please remember to type the country code.")
-        bluePrint.clear_text(self)
+      
+      #parse the number  
+      num = phonenumbers.parse(phoneNumber)
+      #check if the number is a possible phone number
+      if phonenumbers.is_possible_number(num) == False:
+        #show error message if its not
+        messagebox.showerror("Error", "This doesn't seem like a correct phone number")
         return 1
       
-      
+    #if gender was entered  
     if gender:
-        
+      #if gender is not one of the three choices  
       if gender not in ["Non-binary" ,"Male", "Female"]:
-          
+        #show an error message  
         messagebox.showerror("Error", "This doesn't seem like a correct gender, its only Non-binary, Male or Female")
-        bluePrint.clear_text(self)
         return 1
     
-    
+    #if email was entered
     if email:
-        
-      if ".com" in email and "@" in email:
-        
-        pass
-
-      else:
-        
+      #if email is not in the correct format  
+      if ".com" not in email and "@" not in email:
+        #show an error message
         messagebox.showerror("Error", "This doesn't seem like a correct email")
-        bluePrint.clear_text(self)
         return 1
     
-    
+    #ask the user for confirmation
     choice = messagebox.askokcancel(title="Hmmm", message="Confirmation for adding the record", icon="warning")
-    bluePrint.clear_text(self)
     
     if choice == True:
       
+      bluePrint.clear_text(self)
+      
       try:
-        
+        #create the SQL statement
         sql = f"INSERT INTO `{userID}` (firstName, secondName, phoneNumber, email, gender) VALUES(%s, %s, %s, %s, %s);"
+        #set the parameters
         parameter =  [firstName, secondName, phoneNumber, email, gender]
+        #execute and commit the sql statement
         mycursor.execute(sql, parameter)
         mydb.commit()
+        #show the success message
         messagebox.showinfo("Success", "You have added a new record!")
-        
+        #show the tool menu frame
         self.controller.show_frame(toolMenu)
         return 0
       
+      #except if there was an error in inserting the new record
       except:
-        
+        #show the error message
         messagebox.showerror("Error", "Something happened while trying to add a new record, try again later.")
         return 1
 
-    
+#create an instance of the app object   
 App = app()
+#initialise the TK mainframe loop.
 App.mainloop()
 
