@@ -70,7 +70,8 @@ class app(tk.Tk):
         frame = self.frames[cont]  
         frame.tkraise()  
         
-# define the startUpMenu class (which will be the login / sign up page)
+#FUNCTIONAL REQUIREMENT 1       
+#define the startUpMenu class (which will be the login / sign up page)
 class startUpMenu(ttk.Frame):
     #init
     def __init__(self, parent, controller):
@@ -94,7 +95,8 @@ class startUpMenu(ttk.Frame):
         #Create a quit program button and display it
         backwardButton = ttk.Button(self, text="Quit", command=lambda: sys.exit())
         backwardButton.place(relx=0.05, rely=0.05)
-        
+
+#FUNCTIONAL REQUIREMENT 2    
 #create a class which will be the template for the login and sign up page
 class frontPageTemplate(ttk.Frame):
     #init
