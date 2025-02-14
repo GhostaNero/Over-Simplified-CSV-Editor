@@ -286,7 +286,7 @@ class signUpMenu(frontPageTemplate):
         mycursor.execute(sql)
         mydb.commit()
         messagebox.showinfo("Success!", ":D You created an user!!")
-        return
+        
       
       except:
         
@@ -849,6 +849,8 @@ class searchMenu(bluePrint):
     
     #If there is data in the rows
     if rows:
+      
+      mainMenu.bubble_sort(self, rows)
       
       #for every data in the treeview object, delete it
       for item in self.tree.get_children():
