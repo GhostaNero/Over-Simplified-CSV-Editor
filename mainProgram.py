@@ -693,7 +693,7 @@ class bluePrint(mainMenu):
     self.emailEntryBox.delete(0,'end')
 
   #create the function to show the user inputs
-  def showSearchMenu(self):
+  def showUserInput(self):
     
     #display all the label and entry box onto the screen
     self.fNameLabel.pack(side= "top", expand=True, pady=(25, 10))
@@ -822,7 +822,7 @@ class searchMenu(bluePrint):
     #create the input boxes
     bluePrint.userInputs(self, controller)
     #show the input boxes
-    bluePrint.showSearchMenu(self)
+    bluePrint.showUserInput(self)
     #create the result menu note: the result menu isn't shown 
     bluePrint.resultMenu(self, controller)
     
@@ -917,7 +917,7 @@ class searchMenu(bluePrint):
     #hide the result label
     self.resultLable.place_forget()
     #show the search menu
-    bluePrint.showSearchMenu(self)
+    bluePrint.showUserInput(self)
     #show the main menu
     self.controller.show_frame(toolMenu)
 
@@ -946,7 +946,7 @@ class deletionRecord(searchMenu):
     #hide the result label
     self.resultLable.place_forget()
     #show the search menu
-    bluePrint.showSearchMenu(self)
+    bluePrint.showUserInput(self)
     #show the explanation menu for deleting
     self.controller.show_frame(deleteExplanationMenu)
     
@@ -1103,7 +1103,7 @@ class alterationRecord(searchMenu):
     
     #Initiate everything in the parent class, which is the search menu. This quite literally mean we are searching a record first
     super().__init__(parent, controller)
-  
+    self.alterButton = ttk.Button(self, text="Alter", command=lambda: [self.sqlFunc(firstName, secondName, phoneNumber, email, gender), self.controller.show_frame(finalAlterationRecord)])
   #Overrides the backButtonFunction which now does everything the same except goes back to the explanation page  
   def backButtonFunction(self):
     
@@ -1111,7 +1111,7 @@ class alterationRecord(searchMenu):
     self.tree.pack_forget()
     self.resultLable.place_forget()
     self.alterButton.place_forget()
-    bluePrint.showSearchMenu(self)
+    bluePrint.showUserInput(self)
     self.controller.show_frame(alterationExplanation)
   
   #Overrides the action button in the parent class  
@@ -1149,7 +1149,6 @@ class alterationRecord(searchMenu):
       messagebox.showinfo("Info", "Please double check if the record(s) are correct.")
       
       #Create the alteration button, when pressed will call the SQL function and show the final frame for the alteration
-      self.alterButton = ttk.Button(self, text="Alter", command=lambda: [self.sqlFunc(firstName, secondName, phoneNumber, email, gender), self.controller.show_frame(finalAlterationRecord)])
       self.alterButton.place(relx=0.435, rely=0.75)
       
     #If there is no data, tell the user about it and return.
