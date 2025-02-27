@@ -1103,7 +1103,7 @@ class alterationRecord(searchMenu):
     
     #Initiate everything in the parent class, which is the search menu. This quite literally mean we are searching a record first
     super().__init__(parent, controller)
-    self.alterButton = ttk.Button(self, text="Alter", command=lambda: [self.sqlFunc(firstName, secondName, phoneNumber, email, gender), self.controller.show_frame(finalAlterationRecord)])
+    self.alterButton = ttk.Button(self, text="Alter", command=lambda: [self.sqlFunc(self.fName, self.sName, self.phoneNumber, self.emailData, self.genderData), self.controller.show_frame(finalAlterationRecord)])
   #Overrides the backButtonFunction which now does everything the same except goes back to the explanation page  
   def backButtonFunction(self):
     
@@ -1118,16 +1118,17 @@ class alterationRecord(searchMenu):
   def action(self):
     
     #Gets the values of the user input
-    firstName = self.firstName.get()
-    secondName = self.secondName.get()
-    phoneNumber = self.phoneNum.get()
-    email = self.email.get()
-    gender = self.email.get()
+    self.fName = self.firstName.get()
+    self.sName = self.secondName.get()
+    self.phoneNumber = self.phoneNum.get()
+    self.emailData = self.email.get()
+    self.genderData = self.email.get()
+    
     
     #Clear the entry box texts
     bluePrint.clear_text(self)
     #search for the data and return it
-    rows = self.searchFunction(firstName, secondName, phoneNumber, gender, email)
+    rows = self.searchFunction(self.fName, self.sName, self.phoneNumber, self.genderData, self.emailData)
     
     #If there is data
     if rows:
@@ -1160,6 +1161,7 @@ class alterationRecord(searchMenu):
   #Define the SQL function   
   def sqlFunc(self, firstName, secondName, phoneNumber, email, gender):
     
+    print(firstName, secondName, phoneNumber)
     #set two global parameter which will be used in the finalAlterationClass
     global updateSQL
     global updateParms
@@ -1197,11 +1199,16 @@ class finalAlterationRecord(searchMenu):
     if phoneNumber:
       
       #parse the phone number and check if the number is a possible phone number
-      num = phonenumbers.parse(phoneNumber)
-      if phonenumbers.is_possible_number(num) == False:
-        #if its not possible, send an error message
-        messagebox.showerror("Error", "This doesn't seem like a correct phone number")
+      try:
+        num = phonenumbers.parse(phoneNumber)
+        if phonenumbers.is_possible_number(num) == False:
+          #if its not possible, send an error message
+          messagebox.showerror("Error", "This doesn't seem like a correct phone number")
 
+          return 1
+      except:
+        #if there was an error in parsing the phone number, send an error message
+        messagebox.showerror("Error", "This doesn't seem like a correct phone number")
         return 1
       
     #If gender is inputted  
@@ -1231,7 +1238,7 @@ class finalAlterationRecord(searchMenu):
     if choice == True:  
         
         #get the final SQL statement and parameter returned from the updateSQL function
-        finalUpdateSQL, parms = self.updateSQL(updateSQL, updateParms, firstName, secondName, phoneNumber, email, gender)
+        finalUpdateSQL, parms = self.updateSQL(firstName, secondName, phoneNumber, email, gender)
         #log purposes
         print(finalUpdateSQL, parms)
         #Execute and commit the change
@@ -1245,7 +1252,7 @@ class finalAlterationRecord(searchMenu):
         return 0
         
   #create the updateSQL function      
-  def updateSQL(self, sql, parms2, firstName, secondName, phoneNumber, email, gender):
+  def updateSQL(self, firstName, secondName, phoneNumber, email, gender):
     
     #Create the first part of the SQL statement
     sql = f"UPDATE {userID}"
@@ -1286,7 +1293,7 @@ class finalAlterationRecord(searchMenu):
         
     #create the complete SQL statement and parameter
     sql += " SET " + ", ".join(conditions) + updateSQL
-    parms = parms + parms2
+    parms = parms + updateParms
     #return the parameter and SQL statement
     return sql, parms
  
@@ -1312,10 +1319,15 @@ class additionRecord(searchMenu):
     if phoneNumber:
       
       #parse the number  
-      num = phonenumbers.parse(phoneNumber)
-      #check if the number is a possible phone number
-      if phonenumbers.is_possible_number(num) == False:
-        #show error message if its not
+      try:
+        num = phonenumbers.parse(phoneNumber)
+        #check if the number is a possible phone number
+        if phonenumbers.is_possible_number(num) == False:
+          #show error message if its not
+          messagebox.showerror("Error", "This doesn't seem like a correct phone number")
+          return 1
+      except:
+        #show error message if there was an error in parsing the phone number
         messagebox.showerror("Error", "This doesn't seem like a correct phone number")
         return 1
       
