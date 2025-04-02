@@ -55,7 +55,7 @@ class app(tk.Tk):
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
         #initiate a loop which will initiate all the frames
-        for F in (startUpMenu, logIn, signUpMenu, importCSVPage, mainMenu, searchMenu, deleteExplanationMenu, alterationExplanation,finalAlterationRecord, alterationRecord, deletionRecord, alterationRecord, additionRecord, toolMenu):  
+        for F in (startUpMenu, logIn, signUpMenu, importCSVPage, mainMenu, searchMenu, deleteExplanationMenu, alterationExplanation,finalAlterationRecord, alterationRecord, deleteMenu, alterationRecord, additionRecord, toolMenu):  
             
             frame = F(container, self)  
 
@@ -70,7 +70,7 @@ class app(tk.Tk):
         frame = self.frames[cont]  
         frame.tkraise()  
         
-#FUNCTIONAL REQUIREMENT 1       
+       
 #define the startUpMenu class (which will be the login / sign up page)
 class startUpMenu(ttk.Frame):
     #init
@@ -187,7 +187,7 @@ class signUpMenu(frontPageTemplate):
     def explanationText(self):
       
       #create the explanation text for the user and display it on the screen
-      self.explanationLabel = ttk.Label(self, text="1. Username can only contain english\n    and numeric characters\n    Also not case-sensitve.\n2. Password must contain english characters, \n    numeric characters and special characters.", font=("none, 14"))
+      self.explanationLabel = ttk.Label(self, text="1. Username can only contain english\n    and numeric characters\n    Also not case-sensitive.\n2. Password must contain english characters, \n    numeric characters and special characters.", font=("none, 14"))
       self.explanationLabel.pack(side="top", expand=True, pady=10)
     
     #override parent method  
@@ -369,7 +369,7 @@ class importCSVPage(ttk.Frame):
     style.configure("TButton", width= 20,font=(None, 20))
     
     #create the back and import button and display them on the screen
-    self.backButton = ttk.Button(self, text="Back to main menu", command=lambda: self.backFunction())
+    self.backButton = ttk.Button(self, text="Back to login/Sign-up menu", command=lambda: self.controller.show_frame(startUpMenu))
     self.backButton.pack(side="left", pady=150,expand=True, ipadx= 100, ipady=100)
     self.importingButton = ttk.Button(self, text="Import CSV", command=lambda: self.importCSV())
     self.importingButton.pack(side="left", pady=150,expand=True, ipadx= 100, ipady=100)
@@ -377,11 +377,7 @@ class importCSVPage(ttk.Frame):
     #create the explanation label and display it on the screen
     self.explanationLabel = ttk.Label(self, text="The CSV file's first row must contain the words below in\nthe exact character(case sensitive):\n- firstName\n- secondName\n- phoneNumber\n- gender\n- email", font=("none, 14"))
     self.explanationLabel.place(relx=0.35, rely=0.75)
-    
-  #define the backFunction which will redirect the user to the login/signup menu
-  def backFunction(self):
-    
-    self.controller.show_frame(startUpMenu)
+  
   
   #define the importCSV function which will import the CSV file into the database
   def importCSV(self):
@@ -466,8 +462,8 @@ class mainMenu(importCSVPage):
     self.welcomeLabel.place(relx=0.435, rely=0.1)
     
     #create the log out button and display it on the screen    
-    self.backwardButton = ttk.Button(self, text="Log Out", command=lambda: [self.clearTreeData(self.tree), controller.show_frame(startUpMenu)])
-    self.backwardButton.place(relx=0.05, rely=0.05)
+    self.backButton = ttk.Button(self, text="Log Out", command=lambda: [self.clearTreeData(self.tree), controller.show_frame(startUpMenu)])
+    self.backButton.place(relx=0.05, rely=0.05)
     
     #create the treeview object and display it on the screen
     self.tree = ttk.Treeview(self, column=("First name", "Surname", "Gender", "Email", "Phone Number"), show='headings')
@@ -524,7 +520,9 @@ class mainMenu(importCSVPage):
     
   #define the clearTreeData function which will clear the data in the treeview object 
   def clearTreeData(self, tree):
+    
     for item in tree.get_children():
+      
       tree.delete(item)
   
   #define the refreshData function which will refresh the data in the treeview object    
@@ -545,25 +543,27 @@ class mainMenu(importCSVPage):
       
   #define the bubble_sort function which will sort the data in the rows into alphabetical order
   def bubble_sort(self, rows):
+
+    # Get length of rows
+    n = len(rows)
     
-    #get the length of the rows
-    length = len(rows)
-    #loop through the rows
-    for i in range(length):
-      #set swapped to false
-      swapped = False
-      #loop through the rows again
-      for j in range(0, length-i-1):
-        #if the first character of the first name is greater than the first character of the second name
-        if ord(rows[j][0][0]) > ord(rows[j+1][0][0]):
-          #swap the rows
-          rows[j], rows[j+1] = rows[j+1], rows[j]
-          swapped = True
-      #if swapped is false, break the loop  
-      if not swapped:
+    # Traverse through all rows
+    for i in range(n):
+        swapped = False
         
-        break
-    #return the sorted rows  
+        # Last i elements are already in place
+        for j in range(0, n-i-1):
+            # Compare first names 
+            # Convert to lowercase to make sort case-insensitive
+            if rows[j][0].lower() > rows[j+1][0].lower():
+                # Swap the rows
+                rows[j], rows[j+1] = rows[j+1], rows[j]
+                swapped = True
+                
+        # If no swapping occurred in inner loop, array is sorted
+        if not swapped:
+            break
+            
     return rows
 
 #create the class which will display a menu with all the tools to manipulatte the CSV file. This class will inherit from the mainMenu class
@@ -826,12 +826,6 @@ class searchMenu(bluePrint):
     #create the result menu note: the result menu isn't shown 
     bluePrint.resultMenu(self, controller)
     
-  #define the result lable function
-  def resultLable(self):
-    
-    self.result = ttk.Label(self, text="Result record", font=(None, 30))
-    self.result.place(relx=0.435, rely = 0.1)
-
   #define the action function
   def action(self):
      
@@ -878,7 +872,7 @@ class searchMenu(bluePrint):
   def resultLable(self):
     
     #create a result label for the user to see, this is not displayed yet.
-    self.resultLable = ttk.Label(self, text="Result record", font=(None, 30))
+    self.resultLable = ttk.Label(self, text="Result record(s)", font=(None, 30))
 
   #define the search function    
   def searchFunction(self, firstName, secondName, phoneNumber, gender, email):
@@ -922,7 +916,7 @@ class searchMenu(bluePrint):
     self.controller.show_frame(toolMenu)
 
 
-class deletionRecord(searchMenu):
+class deleteMenu(searchMenu):
   
   #Init
   def __init__(self, parent, controller):
@@ -943,6 +937,7 @@ class deletionRecord(searchMenu):
     bluePrint.clear_text(self)
     #hide the treeview
     self.tree.pack_forget()
+    self.deleteButton.place_forget()
     #hide the result label
     self.resultLable.place_forget()
     #show the search menu
@@ -981,7 +976,7 @@ class deletionRecord(searchMenu):
       Create and place the delete button onto the screen
       Note:
       When this button is clicked, it will delete the records using the delete function,
-      then it will hide the result menu / deletion menu and show the previous frame
+      then it will hide the result menu / delete menu and show the previous frame
       finally removing the deleteButton from the screen and show the main menu.
       '''
       self.deleteButton = ttk.Button(self, text="Delete", command=lambda: [self.delete(firstName, secondName, phoneNumber, gender, email), searchMenu.backButtonFunction(self), self.deleteButton.place_forget(), self.controller.show_frame(mainMenu)])
@@ -1037,11 +1032,11 @@ class deleteExplanationMenu(bluePrint):
     style.configure("TButton", width=20,font=(None, 20))
     
     #Create the button for going back, deleting specific record and clearing the whole CSV file and displaying them onto the screen.
-    self.backwardButton = ttk.Button(self, text="Back", command=lambda: controller.show_frame(mainMenu))
-    self.buttonDeLuxDelete = ttk.Button(self, text="Proceed", command=lambda: controller.show_frame(deletionRecord))
+    self.backButton = ttk.Button(self, text="Back", command=lambda: controller.show_frame(toolMenu))
+    self.buttonDeLuxDelete = ttk.Button(self, text="Proceed", command=lambda: controller.show_frame(deleteMenu))
     self.deleteCSVButton = ttk.Button(self, text="Delete CSV", command=lambda: self.deleteCSV(controller))
     
-    self.backwardButton.pack(side="left", anchor="s",expand=True, ipadx= 100, ipady=100, pady=100)
+    self.backButton.pack(side="left", anchor="s",expand=True, ipadx= 100, ipady=100, pady=100)
     self.buttonDeLuxDelete.pack(side="left", anchor="s",expand=True, ipadx= 100, ipady=100, pady=100)
     self.deleteCSVButton.pack(side="left", anchor="s",expand=True, ipadx= 100, ipady=100, pady=100)
     
@@ -1070,7 +1065,7 @@ class deleteExplanationMenu(bluePrint):
     controller.show_frame(mainMenu)
     return 0
   
-#define the class for the alter tool  
+#define the class for the alter tool
 class alterationExplanation(bluePrint):
   
   def __init__(self, parent, controller):
@@ -1087,13 +1082,13 @@ class alterationExplanation(bluePrint):
     self.explanationLabel.place(relx=0.20, rely=0.35)
     #create the style object to configure the style of the buttons
     style = ttk.Style()
-    style.configure("TButton", width=20,font=(None, 20))
+    style.configure("TButton", width=20, font=(None, 20))
     
     #Create the button for going back to the tool menu and proceed. Then display them onto the screen
-    self.backwardButton = ttk.Button(self, text="Back", command=lambda: controller.show_frame(toolMenu))
+    self.backButton = ttk.Button(self, text="Back", command=lambda: controller.show_frame(toolMenu))
     self.buttonDeLuxAlter = ttk.Button(self, text="Proceed", command=lambda: controller.show_frame(alterationRecord))
     
-    self.backwardButton.pack(side="left", anchor="s",expand=True, ipadx= 100, ipady=100, pady=100)
+    self.backButton.pack(side="left", anchor="s",expand=True, ipadx= 100, ipady=100, pady=100)
     self.buttonDeLuxAlter.pack(side="left", anchor="s",expand=True, ipadx= 100, ipady=100, pady=100)
 
 #Create the class for the frame where the user inputs the search criteria
@@ -1103,7 +1098,7 @@ class alterationRecord(searchMenu):
     
     #Initiate everything in the parent class, which is the search menu. This quite literally mean we are searching a record first
     super().__init__(parent, controller)
-    self.alterButton = ttk.Button(self, text="Alter", command=lambda: [self.sqlFunc(self.fName, self.sName, self.phoneNumber, self.emailData, self.genderData), self.controller.show_frame(finalAlterationRecord)])
+    self.alterButton = ttk.Button(self, text="Alter", command=lambda: [self.sqlFunc(self.fName, self.sName, self.phoneNumber, self.emailData, self.genderData), self.backButtonFunction(), self.controller.show_frame(finalAlterationRecord)])
   #Overrides the backButtonFunction which now does everything the same except goes back to the explanation page  
   def backButtonFunction(self):
     
@@ -1122,7 +1117,7 @@ class alterationRecord(searchMenu):
     self.sName = self.secondName.get()
     self.phoneNumber = self.phoneNum.get()
     self.emailData = self.email.get()
-    self.genderData = self.email.get()
+    self.genderData = self.gender.get()
     
     
     #Clear the entry box texts
@@ -1172,13 +1167,13 @@ class alterationRecord(searchMenu):
           To do this I will concatenate the WHERE clause and the parameters to the SQL statement in the finalAlterationRecord class.
     '''
     updateSQL = ""
-    updateSQL, updateParms = bluePrint.dynamicSQL(self, firstName, secondName, phoneNumber, email, gender, updateSQL)
+    updateSQL, updateParms = bluePrint.dynamicSQL(self, firstName, secondName, phoneNumber, gender, email, updateSQL)
     
   #define result lable  
   def resultLable(self):
     
     self.resultLable = ttk.Label(self, text="Result record(s)", font=(None, 30))
-    
+
 #Create the class for the final frame for altering records
 class finalAlterationRecord(searchMenu):
   
@@ -1186,7 +1181,7 @@ class finalAlterationRecord(searchMenu):
     #initiate everything in the parent class as usual
     super().__init__(parent, controller)
 
-  #define the action button which overrides the parent method  
+  #define the action button which overrides the parent method
   def action(self):
     #get all the values of the user inputs
     firstName = self.firstName.get()
@@ -1296,8 +1291,8 @@ class finalAlterationRecord(searchMenu):
     parms = parms + updateParms
     #return the parameter and SQL statement
     return sql, parms
- 
-#Define the class for adding records    
+
+#Define the class for adding records
 class additionRecord(searchMenu):
   
   def __init__(self, parent, controller):
@@ -1370,7 +1365,7 @@ class additionRecord(searchMenu):
       
       #except if there was an error in inserting the new record
       except:
-        #show the error message
+      #show the error message
         messagebox.showerror("Error", "Something happened while trying to add a new record, try again later.")
         return 1
 

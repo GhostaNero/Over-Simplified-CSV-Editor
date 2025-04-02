@@ -34,6 +34,8 @@ Though if you wish to generate a CSV test data, I have also attached the program
 As I said before this program's DB is not cloud hosted so I will try to change that, also the code is not efficient and done well enough.
 I would like to make it more dynamic in the future, but given the inexperience with OOP and my age I am quite proud.
 
+Also the fixed format is something I would reconsider and probably implement a better system where any CSV file is supported :D
+
 int main(void){
     printf("success");
     return 0
