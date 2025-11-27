@@ -3,7 +3,7 @@ from tkinter import messagebox, ttk, filedialog
 import sv_ttk
 import sys
 import mysql.connector
-import ignore
+import gnore
 import pandas as pd
 import sqlalchemy
 import phonenumbers
